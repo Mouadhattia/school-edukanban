@@ -1,0 +1,578 @@
+import type React from "react";
+export type UserRole =
+  | "teacher"
+  | "student"
+  | "admin"
+  | "curriculum-designer"
+  | "org-admin"
+  | "super-admin";
+
+export interface School {
+  id: string;
+  name: string;
+  address: string;
+  logo: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  createdAt: Date;
+  ownerId: string;
+  plan: "free" | "professional" | "enterprise";
+  settings: {
+    defaultTemplateVisibility: "private" | "organization" | "public";
+    allowPublicTemplates: boolean;
+    requireApprovalForPublishing: boolean;
+    brandingEnabled: boolean;
+    customDomain?: string;
+  };
+  status?: "active" | "trial" | "suspended" | "expired";
+  trialEndsAt?: Date;
+  billingCycle?: "monthly" | "annual";
+  nextBillingDate?: Date;
+}
+
+export interface OrganizationMember {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: "admin" | "designer" | "viewer";
+  joinedAt: Date;
+  invitedBy: string;
+  status: "active" | "invited" | "suspended";
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+  bio?: string;
+  title?: string;
+  expertise?: string[];
+  organizationIds?: string[]; // Organizations the user belongs to
+  defaultOrganizationId?: string; // The organization shown by default
+  status?: "active" | "pending" | "suspended" | "deleted";
+  lastLogin?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Update the Board interface to include classId (singular) and templateId
+export interface Board {
+  id: string;
+  title: string;
+  description: string;
+  createdAt: Date;
+  ownerId: string;
+  ownerName: string;
+  schoolId?: string;
+  classId?: string; // The single class this board is assigned to
+  shared: boolean;
+  color: string;
+  isTemplate?: boolean;
+  templateId?: string; // Reference to the original template if this board was created from a template
+  boardModel?: string; // The model used to create this board
+  status: "draft" | "published"; // Add status field to track if board is draft or published
+}
+
+// Add a Class interface if it doesn't exist already
+export interface Class {
+  id: string;
+  name: string;
+  subject: string;
+  grade: string;
+  period?: string;
+  room?: string;
+  studentCount: number;
+  startTime?: string;
+  endTime?: string;
+  days?: string[];
+  color: string;
+  description?: string;
+  teacherId: string;
+}
+
+export interface Column {
+  id: string;
+  title: string;
+  taskIds: string[];
+}
+
+export type TaskType =
+  | "lesson"
+  | "assignment"
+  | "homework"
+  | "assessment"
+  | "preparation"
+  | "review";
+export type TaskPriority = "low" | "medium" | "high";
+export type TaskVisibility = "personal" | "shared" | "instanced";
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  type: TaskType;
+  priority: TaskPriority;
+  dueDate?: Date;
+  assignedStudentIds: string[];
+  attachments: Attachment[];
+  comments: Comment[];
+  createdBy: string;
+  status?: "todo" | "in-progress" | "submitted" | "completed";
+  grade?: string;
+  boardId?: string;
+  boardName?: string;
+  // New fields for the three-type task model
+  visibility: TaskVisibility;
+  parentTaskId?: string; // For instanced tasks, reference to the original task
+  instanceOwnerId?: string; // For instanced tasks, the student who owns this instance
+  teachingActivities?: string;
+  canEditTitle?: boolean;
+  canEditDescription?: boolean;
+  canEditDueDate?: boolean;
+  canEditType?: boolean;
+  canEditPriority?: boolean;
+}
+
+export interface Attachment {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  uploadedAt?: Date;
+  uploadedBy?: string;
+  size?: string;
+}
+
+export interface Comment {
+  id: string;
+  text: string;
+  author: string;
+  createdAt: Date;
+  replies?: Comment[];
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  email: string;
+  grade: string;
+  avatar?: string;
+  classes?: string[];
+  performance?: number;
+  lastActive?: string;
+  status?: string;
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  description: string;
+  classId: string;
+  className: string;
+  dueDate: Date;
+  points: number;
+  type: string;
+  status: "draft" | "active" | "archived";
+  attachments: Attachment[];
+  createdAt: Date;
+}
+
+export interface GradeEntry {
+  id: string;
+  studentId: string;
+  studentName: string;
+  assignmentId: string;
+  assignmentTitle: string;
+  classId: string;
+  className: string;
+  score: number;
+  possiblePoints: number;
+  feedback?: string;
+  submittedAt?: Date;
+  gradedAt?: Date;
+}
+
+export interface TemplateVersion {
+  version: string;
+  releaseDate: Date;
+  changes: string[];
+}
+
+export interface TemplateColumn {
+  id: string;
+  title: string;
+  taskIds: string[];
+}
+
+export interface TemplateTask {
+  id: string;
+  title: string;
+  description: string;
+  type: TaskType;
+  priority: TaskPriority;
+}
+
+export interface Template {
+  id: string;
+  title: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+  designerId: string;
+  designerName: string;
+  organizationId: string; // The organization that owns this template
+  previewImage?: string;
+  color: string;
+  educationLevels: string[]; // e.g., ["elementary", "middle", "high"]
+  subjects: string[]; // e.g., ["math", "science", "english"]
+  standards?: string[]; // e.g., ["CCSS.MATH.CONTENT.5.NBT.A.1"]
+  pricing: TemplatePricing;
+  status: "draft" | "published" | "archived" | "pending_approval" | "rejected";
+  visibility: "private" | "organization" | "public"; // Who can see this template
+  stats: TemplateStats;
+  restrictedToSchools?: string[]; // School IDs that can access this template
+  versions: TemplateVersion[]; // Version history
+  columns?: TemplateColumn[]; // Kanban board columns
+  tasks?: TemplateTask[]; // Sample tasks
+  sprints?: { name: string; duration: number }[]; // Sprint definitions
+  collaborators?: TemplateCollaborator[]; // Users who can collaborate on this template
+  tags?: string[]; // Additional tags for searching and filtering
+  featured?: boolean; // Whether this template is featured by super admin
+  moderationStatus?: "approved" | "flagged" | "under_review";
+  moderationNotes?: string;
+  isPurchased?: boolean; // Whether the current user/school has purchased this template
+  accessGranted?: string[]; // IDs of teachers who have been granted access to this template
+  visibility: string;
+}
+
+export interface TemplateCollaborator {
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  role: "editor" | "viewer" | "admin";
+  addedAt: Date;
+  addedBy: string;
+}
+
+export interface TemplatePricing {
+  type: "free" | "paid" | "trial";
+  model?: "per_instance" | "per_student"; // How pricing is calculated
+  price?: number; // Price in USD
+  trialPeriod?: number; // Number of days for trial
+  trialInstances?: number; // Number of instances allowed in trial
+  maxStudents?: number; // Maximum number of students allowed in trial
+}
+
+export interface TemplateStats {
+  views: number;
+  installs: number;
+  activeInstances: number;
+  rating?: number;
+  schoolsUsing: number;
+  revenue?: number; // Total revenue generated by this template
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  organizationId: string;
+  role: "admin" | "designer" | "viewer";
+  invitedBy: string;
+  invitedAt: Date;
+  status: "pending" | "accepted" | "declined" | "expired";
+  expiresAt: Date;
+  token: string;
+}
+
+export interface Activity {
+  id: string;
+  type:
+    | "template_created"
+    | "template_updated"
+    | "template_published"
+    | "template_archived"
+    | "user_joined"
+    | "user_invited"
+    | "comment_added"
+    | "organization_created"
+    | "payment_processed"
+    | "system_update"
+    | "security_alert";
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  organizationId?: string;
+  templateId?: string;
+  templateTitle?: string;
+  timestamp: Date;
+  details?: any;
+  severity?: "info" | "warning" | "critical";
+  scope: "system" | "organization" | "template" | "user";
+}
+
+export interface SystemSettings {
+  maintenance: {
+    enabled: boolean;
+    scheduledStart?: Date;
+    scheduledEnd?: Date;
+    message?: string;
+  };
+  security: {
+    passwordPolicy: {
+      minLength: number;
+      requireUppercase: boolean;
+      requireLowercase: boolean;
+      requireNumbers: boolean;
+      requireSpecialChars: boolean;
+      expiryDays: number;
+    };
+    twoFactorAuth: {
+      required: boolean;
+      requiredForRoles: UserRole[];
+    };
+    sessionTimeout: number; // minutes
+  };
+  billing: {
+    plans: {
+      free: {
+        enabled: boolean;
+        maxUsers: number;
+        maxTemplates: number;
+        features: string[];
+      };
+      professional: {
+        enabled: boolean;
+        price: number;
+        maxUsers: number;
+        maxTemplates: number;
+        features: string[];
+      };
+      enterprise: {
+        enabled: boolean;
+        features: string[];
+      };
+    };
+    trialPeriod: number; // days
+  };
+  localization: {
+    defaultLanguage: string;
+    supportedLanguages: string[];
+    dateFormat: string;
+    timeFormat: string;
+    timezone: string;
+  };
+  notifications: {
+    emailEnabled: boolean;
+    systemNotificationsEnabled: boolean;
+    defaultEmailTemplates: {
+      welcome: string;
+      passwordReset: string;
+      inviteUser: string;
+      paymentReceipt: string;
+    };
+  };
+  api: {
+    rateLimit: number;
+    enabled: boolean;
+  };
+}
+
+export interface SystemHealth {
+  cpu: {
+    usage: number;
+    temperature: number;
+  };
+  memory: {
+    total: number;
+    used: number;
+    free: number;
+  };
+  disk: {
+    total: number;
+    used: number;
+    free: number;
+  };
+  database: {
+    connections: number;
+    queryResponseTime: number;
+    size: number;
+    lastBackup: Date;
+  };
+  api: {
+    requestsPerMinute: number;
+    averageResponseTime: number;
+    errorRate: number;
+  };
+  lastChecked: Date;
+}
+
+export interface MaintenanceTask {
+  id: string;
+  name: string;
+  description: string;
+  status: "scheduled" | "in_progress" | "completed" | "failed" | "cancelled";
+  scheduledStart: Date;
+  scheduledEnd?: Date;
+  actualStart?: Date;
+  actualEnd?: Date;
+  affectedSystems: string[];
+  priority: "low" | "medium" | "high" | "critical";
+  createdBy: string;
+  notes?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  userId: string;
+  userName: string;
+  userIp: string;
+  resourceType: string;
+  resourceId: string;
+  timestamp: Date;
+  details: any;
+  success: boolean;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  amount: number;
+  currency: string;
+  status: "pending" | "completed" | "failed" | "refunded";
+  paymentMethod: string;
+  description: string;
+  createdAt: Date;
+  completedAt?: Date;
+  refundedAt?: Date;
+  invoiceId?: string;
+  receiptUrl?: string;
+}
+
+export interface NavItem {
+  title: string;
+  items: {
+    title: string;
+    href: string;
+    icon?: React.ComponentType<{ className?: string }>;
+    active?: boolean;
+    badge?: number | string;
+    badgeVariant?: "default" | "destructive";
+  }[];
+}
+
+export interface PaginationOptions {
+  page: number;
+  pageSize: number;
+}
+
+export interface SortOptions {
+  field: string;
+  direction: "asc" | "desc";
+}
+
+export interface FilterOptions {
+  [key: string]: any;
+}
+
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+}
+
+//sites
+
+export interface SiteSettings {
+  id: string;
+  site_id: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text: string;
+  };
+  fonts: {
+    heading: string;
+    body: string;
+  };
+  logo_url: string;
+  favicon_url: string;
+  social_links: Record<string, string>;
+  analytics: Record<string, any>;
+  seo: {
+    title: string;
+    description: string;
+    keywords: string[];
+  };
+  created_at: Date;
+  updated_at: Date;
+}
+export interface Site {
+  _id: string;
+  name: string;
+  domain: string;
+  status: "published" | "draft";
+  image_url: string;
+  created_at: Date;
+  updated_at: Date;
+  last_updated: Date;
+  settings: SiteSettings;
+  pages: Page[];
+}
+export interface Page {
+  id: string;
+  site_id: string;
+  title: string;
+  slug: string;
+  is_homepage: boolean;
+  order_index: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Section Model
+export interface Section {
+  id: string;
+  page_id: string;
+  type: SectionType;
+  label: string;
+  order_index: number;
+  content: any;
+  created_at: Date;
+  updated_at: Date;
+}
+type SectionType =
+  | "hero"
+  | "heading"
+  | "paragraph"
+  | "features"
+  | "testimonials"
+  | "cta"
+  | "staff_directory"
+  | "calendar"
+  | "contact"
+  | "image"
+  | "gallery"
+  | "video"
+  | "faq";
+
+// Section Content Types
