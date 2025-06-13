@@ -6,7 +6,7 @@ import { useState } from "react";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { DashboardHeader } from "@/components/ui/dashboard-header";
 import { OrganizationDataProvider } from "@/contexts/organization-data-context";
-
+import { ToastProvider } from "@/components/ui/toast";
 export default function AdminLayout({
   children,
 }: {

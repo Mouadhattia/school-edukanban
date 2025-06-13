@@ -30,7 +30,7 @@ import type {
 // Configuration flag to switch between mock and real API
 const USE_MOCK_DATA = false;
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.example.com";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // Helper for API requests
 async function apiRequest<T>(
@@ -522,13 +522,15 @@ export async function createSite(site: Partial<Site>): Promise<Site> {
   });
 }
 
-export async function getSites(): Promise<Site[]> {
+export async function getSites(query: any): Promise<any> {
   if (USE_MOCK_DATA) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return [];
   }
 
-  return apiRequest<Site[]>("/builder/sites");
+  return apiRequest<any>(
+    `/builder/sites?page=${query.page}&limit=${query.limit}&status=${query.status}&search=${query.search}&schoolId=${query.schoolId}`
+  );
 }
 
 export async function getSite(id: string): Promise<Site | null> {
@@ -744,15 +746,18 @@ export async function updateSection(
   });
 }
 
-export async function updateSectionOrder(sectionIds: string[]): Promise<void> {
-  if (USE_MOCK_DATA) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return Promise.resolve();
-  }
+export async function updateSectionOrder(
+  sectionId: string,
+  newIndex: number
+): Promise<Section[]> {
+  // if (USE_MOCK_DATA) {
+  //   await new Promise((resolve) => setTimeout(resolve, 500));
+  //   return Promise.resolve();
+  // }
 
-  return apiRequest<void>("/builder/sections/order", {
-    method: "PUT",
-    body: JSON.stringify({ sectionIds }),
+  return apiRequest<Section[]>("/builder/sections/order", {
+    method: "POST",
+    body: JSON.stringify({ sectionId, newIndex }),
   });
 }
 
@@ -786,5 +791,11 @@ export async function duplicateSection(id: string): Promise<Section> {
     method: "POST",
   });
 }
-
+export async function getProfile(token: string): Promise<User> {
+  return apiRequest<User>("/auth/profile", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
 //sites

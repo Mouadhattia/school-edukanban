@@ -47,20 +47,21 @@ export interface OrganizationMember {
 }
 
 export interface User {
-  id: string;
-  name: string;
+  _id: string;
+  fullName: string;
   email: string;
   role: UserRole;
   avatar?: string;
   bio?: string;
   title?: string;
   expertise?: string[];
-  organizationIds?: string[]; // Organizations the user belongs to
+  organizationIds?: any; // Organizations the user belongs to
   defaultOrganizationId?: string; // The organization shown by default
   status?: "active" | "pending" | "suspended" | "deleted";
   lastLogin?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  schoolIds: string[];
 }
 
 // Update the Board interface to include classId (singular) and templateId
@@ -525,6 +526,7 @@ export interface SiteSettings {
   };
   created_at: Date;
   updated_at: Date;
+  last_updated: Date;
 }
 export interface Site {
   _id: string;
@@ -537,9 +539,10 @@ export interface Site {
   last_updated: Date;
   settings: SiteSettings;
   pages: Page[];
+  schoolId: string;
 }
 export interface Page {
-  id: string;
+  _id: string;
   site_id: string;
   title: string;
   slug: string;
@@ -551,16 +554,16 @@ export interface Page {
 
 // Section Model
 export interface Section {
-  id: string;
+  _id: string;
   page_id: string;
-  type: SectionType;
+  type?: SectionType;
   label: string;
   order_index: number;
   content: any;
   created_at: Date;
   updated_at: Date;
 }
-type SectionType =
+export type SectionType =
   | "hero"
   | "heading"
   | "paragraph"

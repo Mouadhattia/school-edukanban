@@ -26,6 +26,7 @@ import type {
   Site,
   Page,
   Section,
+  User,
 } from "@/lib/types";
 import {
   createSite,
@@ -47,6 +48,7 @@ import {
   updateSectionOrder,
   deleteSection,
   duplicateSection,
+  getProfile as getProfileApi,
 } from "@/lib/api-service";
 
 interface OrganizationDataContextType {
@@ -66,7 +68,7 @@ interface OrganizationDataContextType {
   filteredTemplates: (filter: Record<string, any>) => Template[];
   sortedMembers: (sortOptions: SortOptions) => OrganizationMember[];
   sortedTemplates: (sortOptions: SortOptions) => Template[];
-
+  fetchSitesData: (query: any) => Promise<void>;
   // Member actions
   addMember: (email: string, role: string) => Promise<void>;
   updateMemberRole: (memberId: string, role: string) => Promise<void>;
@@ -101,6 +103,7 @@ interface OrganizationDataContextType {
   sitePages: Page[];
   currentPage: Page | null;
   pageSections: Section[];
+  user: Partial<User> | null;
 
   // Site actions
   createNewSite: (site: Partial<Site>) => Promise<void>;
@@ -125,8 +128,12 @@ interface OrganizationDataContextType {
     data: Partial<Section>
   ) => Promise<void>;
   deleteSectionData: (sectionId: string) => Promise<void>;
-  updateSectionsOrder: (sectionIds: string[]) => Promise<void>;
+  updateSectionsOrder: (
+    sectionId: string,
+    newIndex: number
+  ) => Promise<Section[]>;
   duplicateSectionData: (sectionId: string) => Promise<void>;
+  fetchPageSections: (pageId: string) => Promise<void>;
 
   // Site selection
   setCurrentSite: (site: Site | null) => void;
@@ -159,7 +166,21 @@ export function OrganizationDataProvider({
   const [sitePages, setSitePages] = useState<Page[]>([]);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const [pageSections, setPageSections] = useState<Section[]>([]);
+  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
+  useEffect(() => {
+    // Only access localStorage in the browser environment
+    if (typeof window !== "undefined") {
+      setToken(localStorage.getItem("token"));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      getProfileApi(token).then((user) => setUser(user));
+    }
+  }, [token]);
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -171,7 +192,7 @@ export function OrganizationDataProvider({
           getOrganizationTemplates(organizationId),
           getOrganizationActivity(organizationId),
           getOrganizationInvitations(organizationId),
-          fetchSitesData(),
+          // fetchSitesData(),
         ]);
 
       setOrganization(org || null);
@@ -190,10 +211,10 @@ export function OrganizationDataProvider({
   };
 
   // Fetch sites data
-  const fetchSitesData = async () => {
+  const fetchSitesData = async (query: any) => {
     try {
-      const sitesList = await getSites();
-      setSites(sitesList?.sites);
+      const sitesList = await getSites(query);
+      setSites(sitesList);
     } catch (error) {
       console.error("Error fetching sites:", error);
       setError(
@@ -219,6 +240,7 @@ export function OrganizationDataProvider({
   const fetchPageSections = async (pageId: string) => {
     try {
       const sections = await getSections(pageId);
+
       setPageSections(sections);
     } catch (error) {
       console.error("Error fetching sections:", error);
@@ -908,9 +930,9 @@ export function OrganizationDataProvider({
     try {
       const updatedPage = await updatePage(pageId, data);
       setSitePages((prev) =>
-        prev.map((page) => (page.id === pageId ? updatedPage : page))
+        prev.map((page) => (page._id === pageId ? updatedPage : page))
       );
-      if (currentPage?.id === pageId) {
+      if (currentPage?._id === pageId) {
         setCurrentPage(updatedPage);
       }
     } catch (error) {
@@ -922,8 +944,8 @@ export function OrganizationDataProvider({
   const deletePageData = async (pageId: string) => {
     try {
       await deletePage(pageId);
-      setSitePages((prev) => prev.filter((page) => page.id !== pageId));
-      if (currentPage?.id === pageId) {
+      setSitePages((prev) => prev.filter((page) => page._id !== pageId));
+      if (currentPage?._id === pageId) {
         setCurrentPage(null);
       }
     } catch (error) {
@@ -949,7 +971,11 @@ export function OrganizationDataProvider({
   const createNewSection = async (section: Partial<Section>) => {
     try {
       const newSection = await createSection(section);
-      setPageSections((prev) => [newSection, ...prev]);
+      setPageSections((prev: any) => {
+        const newSections = [...prev];
+        newSections.splice(newSection.order_index, 0, newSection); // <-- insert at index
+        return newSections;
+      });
     } catch (error) {
       console.error("Error creating section:", error);
       throw error;
@@ -964,7 +990,7 @@ export function OrganizationDataProvider({
       const updatedSection = await updateSection(sectionId, data);
       setPageSections((prev) =>
         prev.map((section) =>
-          section.id === sectionId ? updatedSection : section
+          section._id === sectionId ? updatedSection : section
         )
       );
     } catch (error) {
@@ -977,7 +1003,7 @@ export function OrganizationDataProvider({
     try {
       await deleteSection(sectionId);
       setPageSections((prev) =>
-        prev.filter((section) => section.id !== sectionId)
+        prev.filter((section) => section._id !== sectionId)
       );
     } catch (error) {
       console.error("Error deleting section:", error);
@@ -985,13 +1011,11 @@ export function OrganizationDataProvider({
     }
   };
 
-  const updateSectionsOrder = async (sectionIds: string[]) => {
+  const updateSectionsOrder = async (sectionId: string, newIndex: number) => {
     try {
-      await updateSectionOrder(sectionIds);
-      // Refresh sections to get the new order
-      if (currentPage) {
-        await fetchPageSections(currentPage.id);
-      }
+      const sections = await updateSectionOrder(sectionId, newIndex);
+      setPageSections(sections);
+      return sections;
     } catch (error) {
       console.error("Error updating sections order:", error);
       throw error;
@@ -1019,7 +1043,7 @@ export function OrganizationDataProvider({
 
   useEffect(() => {
     if (currentPage) {
-      fetchPageSections(currentPage.id);
+      fetchPageSections(currentPage._id);
     } else {
       setPageSections([]);
     }
@@ -1030,7 +1054,12 @@ export function OrganizationDataProvider({
     try {
       setLoading(true);
       const site = await getSite(siteId);
+
       setSelectedSite(site);
+      if (site) {
+        setSitePages(site.pages);
+      }
+
       return site;
     } catch (error) {
       console.error("Error fetching site:", error);
@@ -1094,6 +1123,7 @@ export function OrganizationDataProvider({
         sitePages,
         currentPage,
         pageSections,
+        user,
 
         // Site actions
         createNewSite,
@@ -1101,6 +1131,7 @@ export function OrganizationDataProvider({
         deleteSiteData,
         updateSiteSettingsData,
         getSiteById,
+        fetchSitesData,
 
         // Page actions
         createNewPage,
@@ -1114,6 +1145,7 @@ export function OrganizationDataProvider({
         deleteSectionData,
         updateSectionsOrder,
         duplicateSectionData,
+        fetchPageSections,
 
         // Site selection
         setCurrentSite,

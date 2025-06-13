@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { ReactNode, use } from "react";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "@/components/ui/use-toast";
+
 import {
   ArrowLeft,
   BookOpen,
@@ -87,15 +88,57 @@ import { fontStyles } from "@/components/font-style-picker";
 import { SiteSettingsPanel } from "@/components/site-settings-panel";
 import { DesignPreview } from "@/components/design-preview";
 import { useOrganizationData } from "@/contexts/organization-data-context";
-export default function EditorPage({ params }: { params: { id: string } }) {
-  const { selectedSite, getSiteById } = useOrganizationData();
+import { useToast } from "@/components/ui/toast";
+import { Page, Section, SectionType } from "@/lib/types";
+
+interface Component {
+  id: string;
+  label: string;
+  description: string;
+  icon: ReactNode;
+  category: string;
+  difficulty: string;
+}
+
+interface ComponentLibrary {
+  recommended: Component[];
+  content: Component[];
+  media: Component[];
+  school: Component[];
+}
+
+export default function EditorPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { addToast } = useToast();
+  const {
+    selectedSite,
+    getSiteById,
+    sitePages,
+    createNewPage,
+    updatePageData,
+    deletePageData,
+    updateSiteData,
+    updateSiteSettingsData,
+    createNewSection,
+    deleteSectionData,
+    setCurrentPage,
+    updateSectionsOrder,
+    updateSectionData,
+    currentPage,
+    pageSections: pageSectionsContext,
+  } = useOrganizationData();
   const router = useRouter();
   const [activeView, setActiveView] = useState<"desktop" | "tablet" | "mobile">(
     "desktop"
   );
+
   const [showComponentLibrary, setShowComponentLibrary] = useState(true);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [tempContent, setTempContent] = useState<any>(null);
   const [pageTitle, setPageTitle] = useState("Home");
   const [isDragging, setIsDragging] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -116,58 +159,16 @@ export default function EditorPage({ params }: { params: { id: string } }) {
   const [defaultLeftPanelSize, setDefaultLeftPanelSize] = useState(20);
   const [defaultRightPanelSize, setDefaultRightPanelSize] = useState(25);
   const [showSiteSettings, setShowSiteSettings] = useState(false);
-
-  // Mock data for the site being edited
-  const [site, setSite] = useState({
-    id: params.id,
-    name: params.id === "1" ? "Lincoln High School" : "Washington Elementary",
-    domain:
-      params.id === "1" ? "lincoln.edusite.com" : "washington.edusite.com",
-    pages: ["Home", "About", "Academics", "Calendar", "Contact", "Pricing"],
-    settings: {
-      colors: {
-        primary: "#3A86FF",
-        secondary: "#8338EC",
-        accent: "#FF006E",
-        background: "#FFFFFF",
-        text: "#14213D",
-      },
-      fonts: {
-        heading: "'Montserrat', sans-serif",
-        body: "'Open Sans', sans-serif",
-      },
-      logo: "",
-      favicon: "",
-      socialLinks: {},
-      analytics: {},
-      seo: {
-        title: "",
-        description: "",
-        keywords: [],
-      },
-    },
-  });
-
-  useEffect(() => {
-    if (params.id) {
-      const site = getSiteById(params.id);
-    }
-  }, []);
-  console.log("selectedSite", selectedSite);
-  // Store page content for each page separately
-  const [pagesContent, setPagesContent] = useState<Record<string, any[]>>({});
-
-  // Current page sections
-  const [pageSections, setPageSections] = useState<any[]>([]);
+  const [pageId, setPageId] = useState<string | null>(null);
 
   // Component library categories with simplified organization
-  const componentLibrary = {
+  const componentLibrary: ComponentLibrary = {
     recommended: [
       {
         id: "hero",
         label: "Hero Banner",
         description: "Main banner with title and image",
-        icon: <Layers className="h-8 w-8 mb-1" />,
+        icon: (<Layers className="h-8 w-8 mb-1" />) as ReactNode,
         category: "essential",
         difficulty: "easy",
       },
@@ -175,7 +176,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "heading",
         label: "Heading",
         description: "Section title",
-        icon: <Type className="h-8 w-8 mb-1" />,
+        icon: (<Type className="h-8 w-8 mb-1" />) as ReactNode,
         category: "text",
         difficulty: "easy",
       },
@@ -183,7 +184,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "paragraph",
         label: "Text Block",
         description: "Paragraph of text",
-        icon: <FileText className="h-8 w-8 mb-1" />,
+        icon: (<FileText className="h-8 w-8 mb-1" />) as ReactNode,
         category: "text",
         difficulty: "easy",
       },
@@ -191,7 +192,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "image",
         label: "Image",
         description: "Single image with caption",
-        icon: <ImageIcon className="h-8 w-8 mb-1" />,
+        icon: (<ImageIcon className="h-8 w-8 mb-1" />) as ReactNode,
         category: "media",
         difficulty: "easy",
       },
@@ -199,7 +200,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "feature-grid",
         label: "Features Grid",
         description: "Grid of features or programs",
-        icon: <LayoutGrid className="h-8 w-8 mb-1" />,
+        icon: (<LayoutGrid className="h-8 w-8 mb-1" />) as ReactNode,
         category: "essential",
         difficulty: "easy",
       },
@@ -211,7 +212,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           <Button className="h-8 w-8 mb-1 p-0 flex items-center justify-center">
             <span className="text-xs">Btn</span>
           </Button>
-        ),
+        ) as ReactNode,
         category: "interactive",
         difficulty: "easy",
       },
@@ -219,7 +220,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "cta-banner",
         label: "Call to Action",
         description: "Banner with button",
-        icon: <Megaphone className="h-8 w-8 mb-1" />,
+        icon: (<Megaphone className="h-8 w-8 mb-1" />) as ReactNode,
         category: "essential",
         difficulty: "easy",
       },
@@ -227,7 +228,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "gallery",
         label: "Image Gallery",
         description: "Collection of images",
-        icon: <Grid className="h-8 w-8 mb-1" />,
+        icon: (<Grid className="h-8 w-8 mb-1" />) as ReactNode,
         category: "media",
         difficulty: "medium",
       },
@@ -237,7 +238,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "heading",
         label: "Heading",
         description: "Section title",
-        icon: <Type className="h-8 w-8 mb-1" />,
+        icon: (<Type className="h-8 w-8 mb-1" />) as ReactNode,
         category: "text",
         difficulty: "easy",
       },
@@ -245,7 +246,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "subheading",
         label: "Subheading",
         description: "Smaller heading",
-        icon: <Type className="h-6 w-6 mb-1" />,
+        icon: (<Type className="h-6 w-6 mb-1" />) as ReactNode,
         category: "text",
         difficulty: "easy",
       },
@@ -253,7 +254,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "paragraph",
         label: "Text Block",
         description: "Paragraph of text",
-        icon: <FileText className="h-8 w-8 mb-1" />,
+        icon: (<FileText className="h-8 w-8 mb-1" />) as ReactNode,
         category: "text",
         difficulty: "easy",
       },
@@ -261,7 +262,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "quote",
         label: "Quote",
         description: "Highlighted quotation",
-        icon: <MessageSquare className="h-8 w-8 mb-1" />,
+        icon: (<MessageSquare className="h-8 w-8 mb-1" />) as ReactNode,
         category: "text",
         difficulty: "easy",
       },
@@ -269,7 +270,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "list",
         label: "List",
         description: "Bullet or numbered list",
-        icon: <ListOrdered className="h-8 w-8 mb-1" />,
+        icon: (<ListOrdered className="h-8 w-8 mb-1" />) as ReactNode,
         category: "text",
         difficulty: "easy",
       },
@@ -281,7 +282,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           <Button className="h-8 w-8 mb-1 p-0 flex items-center justify-center">
             <span className="text-xs">Btn</span>
           </Button>
-        ),
+        ) as ReactNode,
         category: "interactive",
         difficulty: "easy",
       },
@@ -289,7 +290,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "divider",
         label: "Divider",
         description: "Horizontal line",
-        icon: <Separator className="h-1 w-8 mb-1" />,
+        icon: (<Separator className="h-1 w-8 mb-1" />) as ReactNode,
         category: "layout",
         difficulty: "easy",
       },
@@ -297,7 +298,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "spacer",
         label: "Spacer",
         description: "Adds vertical space",
-        icon: <ArrowLeft className="h-8 w-8 mb-1 rotate-90" />,
+        icon: (<ArrowLeft className="h-8 w-8 mb-1 rotate-90" />) as ReactNode,
         category: "layout",
         difficulty: "easy",
       },
@@ -307,7 +308,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "image",
         label: "Image",
         description: "Single image with caption",
-        icon: <ImageIcon className="h-8 w-8 mb-1" />,
+        icon: (<ImageIcon className="h-8 w-8 mb-1" />) as ReactNode,
         category: "media",
         difficulty: "easy",
       },
@@ -315,7 +316,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "gallery",
         label: "Image Gallery",
         description: "Collection of images",
-        icon: <Grid className="h-8 w-8 mb-1" />,
+        icon: (<Grid className="h-8 w-8 mb-1" />) as ReactNode,
         category: "media",
         difficulty: "medium",
       },
@@ -323,106 +324,8 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "video",
         label: "Video",
         description: "Embedded video",
-        icon: <Video className="h-8 w-8 mb-1" />,
+        icon: (<Video className="h-8 w-8 mb-1" />) as ReactNode,
         category: "media",
-        difficulty: "medium",
-      },
-      {
-        id: "gallery-slider",
-        label: "Image Slider",
-        description: "Carousel of images",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <ImageIcon className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "media",
-        difficulty: "advanced",
-      },
-    ],
-    sections: [
-      {
-        id: "hero",
-        label: "Hero Banner",
-        description: "Main banner with title and image",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Layers className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "essential",
-        difficulty: "easy",
-      },
-      {
-        id: "feature-grid",
-        label: "Features Grid",
-        description: "Grid of features or programs",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <LayoutGrid className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "essential",
-        difficulty: "easy",
-      },
-      {
-        id: "testimonials",
-        label: "Testimonials",
-        description: "Student/parent quotes",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <MessageSquare className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "essential",
-        difficulty: "medium",
-      },
-      {
-        id: "cta-banner",
-        label: "Call to Action",
-        description: "Banner with button",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Megaphone className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "essential",
-        difficulty: "easy",
-      },
-      {
-        id: "image-text",
-        label: "Image & Text",
-        description: "Image with text beside it",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Shapes className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "content",
-        difficulty: "medium",
-      },
-      {
-        id: "team",
-        label: "Team Members",
-        description: "Staff or faculty profiles",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Users className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "content",
-        difficulty: "medium",
-      },
-      {
-        id: "faq",
-        label: "FAQ Accordion",
-        description: "Questions and answers",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Clipboard className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
-        category: "content",
         difficulty: "medium",
       },
     ],
@@ -431,11 +334,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "calendar",
         label: "School Calendar",
         description: "Events and dates",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Calendar className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
+        icon: (<Calendar className="h-8 w-8 mb-1" />) as ReactNode,
         category: "essential",
         difficulty: "medium",
       },
@@ -443,11 +342,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "staff-directory",
         label: "Staff Directory",
         description: "Faculty and staff listing",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Users className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
+        icon: (<Users className="h-8 w-8 mb-1" />) as ReactNode,
         category: "essential",
         difficulty: "medium",
       },
@@ -455,11 +350,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "news",
         label: "School News",
         description: "News and announcements",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Newspaper className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
+        icon: (<Newspaper className="h-8 w-8 mb-1" />) as ReactNode,
         category: "community",
         difficulty: "medium",
       },
@@ -467,11 +358,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         id: "contact-form",
         label: "Contact Form",
         description: "Form for inquiries",
-        icon: (
-          <div className="mr-3 h-12 w-16 rounded bg-muted flex items-center justify-center">
-            <Pencil className="h-6 w-6 text-muted-foreground" />
-          </div>
-        ),
+        icon: (<Pencil className="h-8 w-8 mb-1" />) as ReactNode,
         category: "interactive",
         difficulty: "advanced",
       },
@@ -498,13 +385,9 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     searchQuery
   );
   const filteredMedia = filterComponents(componentLibrary.media, searchQuery);
-  const filteredSections = filterComponents(
-    componentLibrary.sections,
-    searchQuery
-  );
   const filteredSchool = filterComponents(componentLibrary.school, searchQuery);
 
-  // Add this function after the component library definition
+  // Add getDefaultPageContent function
   const getDefaultPageContent = (pageType: string) => {
     const commonHeader = {
       id: "header",
@@ -581,482 +464,6 @@ export default function EditorPage({ params }: { params: { id: string } }) {
               ],
             },
           },
-          {
-            id: "testimonials",
-            type: "Testimonials",
-            label: "Testimonials",
-            content: {
-              title: "What Our Community Says",
-              testimonials: [
-                {
-                  quote: "This school has been amazing for my child!",
-                  author: "Parent Name",
-                  role: "Parent",
-                },
-                {
-                  quote: "I love the supportive environment!",
-                  author: "Student Name",
-                  role: "Student",
-                },
-              ],
-            },
-          },
-          {
-            id: "cta",
-            type: "CTA",
-            label: "Call to Action",
-            content: {
-              title: "Join Our Community",
-              description: "Discover why families choose our school",
-              buttonText: "Enroll Now",
-              buttonLink: "#",
-            },
-          },
-          commonFooter,
-        ];
-      case "about":
-        return [
-          commonHeader,
-          {
-            id: "hero",
-            type: "Hero",
-            label: "Hero Section",
-            content: {
-              title: "About Our School",
-              subtitle: "Our history, mission, and values",
-              ctaText: "Meet Our Staff",
-              ctaLink: "#staff",
-              backgroundImage: "/traditional-schoolhouse.png",
-            },
-          },
-          {
-            id: "mission",
-            type: "Heading",
-            label: "Mission Heading",
-            content: {
-              text: "Our Mission",
-              level: 2,
-            },
-          },
-          {
-            id: "mission-content",
-            type: "Paragraph",
-            label: "Mission Content",
-            content: {
-              text: "Our mission is to provide a nurturing and inclusive environment where students can develop academically, socially, and emotionally. We strive to inspire a love of learning and prepare students to be responsible citizens in a global society.",
-            },
-          },
-          {
-            id: "history",
-            type: "Heading",
-            label: "History Heading",
-            content: {
-              text: "Our History",
-              level: 2,
-            },
-          },
-          {
-            id: "history-content",
-            type: "Paragraph",
-            label: "History Content",
-            content: {
-              text: "Founded in 1985, our school has a rich history of academic excellence and community engagement. We began with just 50 students and have grown to serve over 500 students today, while maintaining our commitment to personalized education.",
-            },
-          },
-          {
-            id: "staff-heading",
-            type: "Heading",
-            label: "Staff Heading",
-            content: {
-              text: "Our Leadership Team",
-              level: 2,
-            },
-          },
-          {
-            id: "staff-directory",
-            type: "StaffDirectory",
-            label: "Staff Directory",
-            content: {
-              title: "Our Faculty & Staff",
-              staff: [
-                {
-                  name: "John Doe",
-                  position: "Principal",
-                  image: "/school-principal.png",
-                },
-                {
-                  name: "Jane Smith",
-                  position: "Vice Principal",
-                  image: "/placeholder-qy1g3.png",
-                },
-                {
-                  name: "Robert Johnson",
-                  position: "Academic Director",
-                  image: "/placeholder-qy1g3.png",
-                },
-              ],
-            },
-          },
-          commonFooter,
-        ];
-      case "academics":
-        return [
-          commonHeader,
-          {
-            id: "hero",
-            type: "Hero",
-            label: "Hero Section",
-            content: {
-              title: "Academic Programs",
-              subtitle: "Excellence in education at every level",
-              ctaText: "Explore Programs",
-              ctaLink: "#programs",
-              backgroundImage: "/traditional-schoolhouse.png",
-            },
-          },
-          {
-            id: "programs-heading",
-            type: "Heading",
-            label: "Programs Heading",
-            content: {
-              text: "Our Academic Approach",
-              level: 2,
-            },
-          },
-          {
-            id: "programs-intro",
-            type: "Paragraph",
-            label: "Programs Introduction",
-            content: {
-              text: "Our curriculum is designed to challenge students while providing the support they need to succeed. We focus on developing critical thinking, problem-solving, and communication skills that prepare students for college and beyond.",
-            },
-          },
-          {
-            id: "programs",
-            type: "Features",
-            label: "Programs",
-            content: {
-              title: "Our Academic Programs",
-              items: [
-                {
-                  title: "Elementary Education",
-                  description:
-                    "Building a strong foundation for lifelong learning",
-                },
-                {
-                  title: "Middle School",
-                  description:
-                    "Transitioning to more advanced studies with support",
-                },
-                {
-                  title: "High School",
-                  description: "College preparation and career exploration",
-                },
-              ],
-            },
-          },
-          {
-            id: "course-catalog",
-            type: "Heading",
-            label: "Course Catalog Heading",
-            content: {
-              text: "Course Offerings",
-              level: 2,
-            },
-          },
-          {
-            id: "course-catalog-content",
-            type: "Paragraph",
-            label: "Course Catalog Content",
-            content: {
-              text: "We offer a wide range of courses across all subject areas, including advanced placement and honors options. Our electives program allows students to explore their interests in arts, technology, languages, and more.",
-            },
-          },
-          commonFooter,
-        ];
-      case "calendar":
-        return [
-          commonHeader,
-          {
-            id: "hero",
-            type: "Hero",
-            label: "Hero Section",
-            content: {
-              title: "School Calendar",
-              subtitle: "Important dates and upcoming events",
-              ctaText: "Download Calendar",
-              ctaLink: "#",
-              backgroundImage: "/traditional-schoolhouse.png",
-            },
-          },
-          {
-            id: "calendar-intro",
-            type: "Paragraph",
-            label: "Calendar Introduction",
-            content: {
-              text: "Stay up-to-date with all school events, holidays, and important academic dates. Our calendar is regularly updated to ensure you have the most current information.",
-            },
-          },
-          {
-            id: "calendar-events",
-            type: "Calendar",
-            label: "Calendar Events",
-            content: {
-              title: "Upcoming Events",
-              events: [
-                {
-                  date: "2023-06-15",
-                  title: "Graduation Ceremony",
-                  description: "Annual graduation ceremony",
-                },
-                {
-                  date: "2023-06-20",
-                  title: "Summer Break Begins",
-                  description: "First day of summer break",
-                },
-                {
-                  date: "2023-08-25",
-                  title: "Teacher Workday",
-                  description: "Staff development day",
-                },
-                {
-                  date: "2023-08-28",
-                  title: "First Day of School",
-                  description: "Welcome back students!",
-                },
-                {
-                  date: "2023-09-04",
-                  title: "Labor Day",
-                  description: "No school",
-                },
-                {
-                  date: "2023-10-16",
-                  title: "Parent-Teacher Conferences",
-                  description: "Early dismissal",
-                },
-              ],
-            },
-          },
-          {
-            id: "academic-calendar",
-            type: "Heading",
-            label: "Academic Calendar Heading",
-            content: {
-              text: "Academic Calendar",
-              level: 2,
-            },
-          },
-          {
-            id: "academic-calendar-content",
-            type: "Paragraph",
-            label: "Academic Calendar Content",
-            content: {
-              text: "Our academic year is divided into two semesters, with quarterly grading periods. Report cards are issued at the end of each quarter, and parent-teacher conferences are scheduled twice per year.",
-            },
-          },
-          commonFooter,
-        ];
-      case "contact":
-        return [
-          commonHeader,
-          {
-            id: "hero",
-            type: "Hero",
-            label: "Hero Section",
-            content: {
-              title: "Contact Us",
-              subtitle: "We'd love to hear from you",
-              ctaText: "",
-              ctaLink: "",
-              backgroundImage: "/traditional-schoolhouse.png",
-            },
-          },
-          {
-            id: "contact-intro",
-            type: "Paragraph",
-            label: "Contact Introduction",
-            content: {
-              text: "Have questions about our school? We're here to help! Reach out to us using the information below, and a member of our team will get back to you as soon as possible.",
-            },
-          },
-          {
-            id: "contact-info-heading",
-            type: "Heading",
-            label: "Contact Info Heading",
-            content: {
-              text: "Contact Information",
-              level: 2,
-            },
-          },
-          {
-            id: "contact-info",
-            type: "Paragraph",
-            label: "Contact Information",
-            content: {
-              text: "Phone: (555) 123-4567\nEmail: info@school.edu\nAddress: 123 School St, Anytown, USA\n\nOffice Hours: Monday-Friday, 8:00 AM - 4:00 PM",
-            },
-          },
-          {
-            id: "map-heading",
-            type: "Heading",
-            label: "Map Heading",
-            content: {
-              text: "Find Us",
-              level: 2,
-            },
-          },
-          {
-            id: "map-image",
-            type: "Image",
-            label: "Map Image",
-            content: {
-              src: "/world-map-vintage.png",
-              alt: "School location map",
-              caption:
-                "Our campus is conveniently located in the heart of Anytown.",
-            },
-          },
-          {
-            id: "departments-heading",
-            type: "Heading",
-            label: "Departments Heading",
-            content: {
-              text: "Department Contacts",
-              level: 2,
-            },
-          },
-          {
-            id: "departments",
-            type: "Features",
-            label: "Department Contacts",
-            content: {
-              title: "",
-              items: [
-                {
-                  title: "Admissions",
-                  description:
-                    "admissions@school.edu | (555) 123-4567 ext. 101",
-                },
-                {
-                  title: "Athletics",
-                  description: "athletics@school.edu | (555) 123-4567 ext. 102",
-                },
-                {
-                  title: "Business Office",
-                  description: "finance@school.edu | (555) 123-4567 ext. 103",
-                },
-              ],
-            },
-          },
-          commonFooter,
-        ];
-      case "pricing":
-        return [
-          commonHeader,
-          {
-            id: "hero",
-            type: "Hero",
-            label: "Hero Section",
-            content: {
-              title: "Tuition & Fees",
-              subtitle: "Investing in your child's future",
-              ctaText: "Apply Now",
-              ctaLink: "#",
-              backgroundImage: "/traditional-schoolhouse.png",
-            },
-          },
-          {
-            id: "pricing-intro",
-            type: "Paragraph",
-            label: "Pricing Introduction",
-            content: {
-              text: "We strive to provide high-quality education at an affordable cost. Our tuition rates are competitive, and we offer various financial aid options and scholarships for qualifying families.",
-            },
-          },
-          {
-            id: "pricing-tiers",
-            type: "Features",
-            label: "Pricing Tiers",
-            content: {
-              title: "Tuition Rates",
-              items: [
-                {
-                  title: "Elementary (K-5)",
-                  description: "$8,500 per academic year",
-                },
-                {
-                  title: "Middle School (6-8)",
-                  description: "$9,500 per academic year",
-                },
-                {
-                  title: "High School (9-12)",
-                  description: "$10,500 per academic year",
-                },
-              ],
-            },
-          },
-          {
-            id: "additional-fees-heading",
-            type: "Heading",
-            label: "Additional Fees Heading",
-            content: {
-              text: "Additional Fees",
-              level: 2,
-            },
-          },
-          {
-            id: "additional-fees",
-            type: "Paragraph",
-            label: "Additional Fees",
-            content: {
-              text: "Additional fees may apply for extracurricular activities, technology, books, and supplies. Please contact our admissions office for a detailed breakdown of all costs.",
-            },
-          },
-          {
-            id: "payment-plans-heading",
-            type: "Heading",
-            label: "Payment Plans Heading",
-            content: {
-              text: "Payment Plans",
-              level: 2,
-            },
-          },
-          {
-            id: "payment-plans",
-            type: "Paragraph",
-            label: "Payment Plans",
-            content: {
-              text: "We offer several payment plan options to accommodate different family budgets:\n\n• Annual Payment: Full tuition paid by August 1 (3% discount)\n• Semester Payment: Two equal payments due August 1 and January 1\n• Monthly Payment: Ten equal payments from August through May",
-            },
-          },
-          {
-            id: "financial-aid-heading",
-            type: "Heading",
-            label: "Financial Aid Heading",
-            content: {
-              text: "Financial Aid & Scholarships",
-              level: 2,
-            },
-          },
-          {
-            id: "financial-aid",
-            type: "Paragraph",
-            label: "Financial Aid",
-            content: {
-              text: "We are committed to making our education accessible to families from diverse economic backgrounds. Financial aid and merit-based scholarships are available based on demonstrated need and student qualifications.",
-            },
-          },
-          {
-            id: "cta",
-            type: "CTA",
-            label: "Call to Action",
-            content: {
-              title: "Ready to Apply?",
-              description: "Start your application process today",
-              buttonText: "Apply Now",
-              buttonLink: "#",
-            },
-          },
           commonFooter,
         ];
       default:
@@ -1087,29 +494,71 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     }
   };
 
-  // Initialize page content on first load
+  // Initialize site data from context
+  const { id } = use(params);
   useEffect(() => {
-    // Initialize default content for all pages
-    const initialPagesContent: Record<string, any[]> = {};
-    site.pages.forEach((page) => {
-      initialPagesContent[page] = getDefaultPageContent(page);
-    });
-    setPagesContent(initialPagesContent);
-
-    // Set initial page sections to Home page content
-    setPageSections(initialPagesContent["Home"]);
+    if (id) {
+      getSiteById(id);
+    }
   }, []);
 
+  // Store page content for each page separately
+  const [pagesContent, setPagesContent] = useState<Record<string, any[]>>({});
+
+  // Current page sections
+  const [pageSections, setPageSections] = useState<any[]>([]);
+
+  // Initialize page content on first load
+  useEffect(() => {
+    if (selectedSite && sitePages) {
+      // Initialize default content for all pages
+      const initialPagesContent: Record<string, any[]> = {};
+
+      sitePages.forEach((page) => {
+        initialPagesContent[page.title] = getDefaultPageContent(page.title);
+      });
+      setPagesContent(initialPagesContent);
+
+      // Set initial page sections to Home page content
+      const homePage = sitePages.find((p) => p.is_homepage);
+      if (homePage) {
+        setPageTitle(homePage.title);
+        setPageSections(initialPagesContent[homePage.title]);
+      }
+    }
+  }, [selectedSite, sitePages]);
+
   // Function to handle preview button click
-  const handlePreviewClick = () => {
+  const handlePreviewClick = async () => {
+    if (!pageId) {
+      addToast({
+        title: "Error",
+        description: "No page selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // First save the current state
-    setPagesContent({
-      ...pagesContent,
-      [pageTitle]: pageSections,
+    await updatePageData(pageId, {
+      title: pageTitle,
+      slug: pageTitle.toLowerCase().replace(/\s+/g, "-"),
+      is_homepage: pageTitle.toLowerCase() === "home",
     });
 
+    // Save all sections for the current page
+    for (const section of pageSections) {
+      await createNewSection({
+        page_id: pageId,
+        type: section.type,
+        label: section.label,
+        order_index: pageSections.indexOf(section),
+        content: section.content,
+      });
+    }
+
     // Navigate to the preview page
-    router.push(`/dashboard/sites/${params.id}/preview`);
+    router.push(`/dashboard/sites/${id}/preview`);
   };
 
   const handleDragStart = (e: React.DragEvent, componentType: string) => {
@@ -1141,16 +590,18 @@ export default function EditorPage({ params }: { params: { id: string } }) {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+
     const componentType = e.dataTransfer.getData("componentType");
+    const sourceIndexStr = e.dataTransfer.getData("sourceIndex");
+    const sourceIndex = sourceIndexStr ? parseInt(sourceIndexStr, 10) : null;
 
     // Find the drop indicator
     const dropIndicator = canvasRef.current?.querySelector(
       ".drop-indicator, .drop-zone"
     );
-    let insertIndex = pageSections.length;
+    let insertIndex = pageSectionsContext.length; // Default to end of the list
 
     if (dropIndicator) {
-      // Find the index based on the drop indicator position
       const sections = Array.from(
         canvasRef.current?.querySelectorAll("[data-section-id]") || []
       );
@@ -1158,8 +609,8 @@ export default function EditorPage({ params }: { params: { id: string } }) {
 
       if (nextSection && nextSection.hasAttribute("data-section-id")) {
         const sectionId = nextSection.getAttribute("data-section-id");
-        insertIndex = pageSections.findIndex(
-          (section) => section.id === sectionId
+        insertIndex = pageSectionsContext.findIndex(
+          (section) => section._id === sectionId
         );
       }
 
@@ -1170,13 +621,10 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     // Create a new section based on the component type
     let newSection;
 
-    // This switch statement would contain all the component creation logic
-    // I'm omitting most of it for brevity, but it should be included in the actual implementation
     switch (componentType) {
       case "hero":
         newSection = {
-          id: `hero-${Date.now()}`,
-          type: "Hero",
+          type: "hero",
           label: "Hero Banner",
           content: {
             title: "Welcome to Our School",
@@ -1190,8 +638,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
 
       case "heading":
         newSection = {
-          id: `heading-${Date.now()}`,
-          type: "Heading",
+          type: "heading",
           label: "Heading",
           content: {
             text: "New Section Heading",
@@ -1200,48 +647,33 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         };
         break;
 
-      // Add other cases for different component types
+      // Add additional component types here...
 
       default:
         newSection = {
-          id: `section-${Date.now()}`,
-          type: "Generic",
+          type: "generic",
           label: "New Section",
           content: {},
         };
     }
 
-    // Add the new section to the page
-    const updatedSections = [...pageSections];
-    updatedSections.splice(insertIndex, 0, newSection);
-    setPageSections(updatedSections);
-
-    // Update the content for the current page
-    setPagesContent({
-      ...pagesContent,
-      [pageTitle]: updatedSections,
-    });
-
-    // Select the new section
-    setSelectedElement(newSection.id);
+    if (currentPage) {
+      createNewSection({
+        page_id: currentPage._id,
+        type: newSection.type as SectionType,
+        label: newSection.label,
+        content: newSection.content,
+        order_index: insertIndex, // 🔥 Use the drop index here!
+      });
+    }
 
     setIsDragging(false);
 
-    // Show success message with helpful tip
-    toast({
+    addToast({
       title: "Component added",
-      description: (
-        <div>
-          <p>Added {newSection.label} to the page</p>
-          <p className="text-xs mt-1 flex items-center">
-            <Lightbulb className="h-3 w-3 mr-1 text-yellow-500" />
-            Tip: Click on the component to edit its content
-          </p>
-        </div>
-      ),
+      description: `Added ${newSection.label} to the page. Click on the component to edit its content.`,
     });
 
-    // If this is the first component added and tutorial is active, advance to next step
     if (showTutorial && pageSections.length === 0 && tutorialStep === 1) {
       setTutorialStep(2);
     }
@@ -1304,9 +736,15 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           '<div class="bg-primary text-white rounded-full h-6 w-6 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg></div>';
 
         if (insertBefore) {
-          closestSection.insertAdjacentElement("beforebegin", indicator);
+          (closestSection as HTMLElement).insertAdjacentElement(
+            "beforebegin",
+            indicator
+          );
         } else {
-          closestSection.insertAdjacentElement("afterend", indicator);
+          (closestSection as HTMLElement).insertAdjacentElement(
+            "afterend",
+            indicator
+          );
         }
       } else if (sections.length === 0) {
         // If there are no sections, add an indicator at the end
@@ -1321,20 +759,64 @@ export default function EditorPage({ params }: { params: { id: string } }) {
   };
 
   const handleElementSelect = (elementId: string) => {
-    setSelectedElement(elementId === selectedElement ? null : elementId);
+    const section = pageSectionsContext.find((s) => s._id === elementId);
+    if (section) {
+      setSelectedElement(elementId === selectedElement ? null : elementId);
+      setTempContent(section.content);
 
-    // If selecting an element and the right panel is collapsed, expand it
-    if (
-      elementId !== selectedElement &&
-      elementId !== null &&
-      rightPanelCollapsed
-    ) {
-      setRightPanelCollapsed(false);
+      // If selecting an element and the right panel is collapsed, expand it
+      if (
+        elementId !== selectedElement &&
+        elementId !== null &&
+        rightPanelCollapsed
+      ) {
+        setRightPanelCollapsed(false);
+      }
+
+      // If this is the first time selecting an element and tutorial is active, advance to next step
+      if (showTutorial && tutorialStep === 2 && selectedElement === null) {
+        setTutorialStep(3);
+      }
     }
+  };
 
-    // If this is the first time selecting an element and tutorial is active, advance to next step
-    if (showTutorial && tutorialStep === 2 && selectedElement === null) {
-      setTutorialStep(3);
+  const handleContentChange = (field: string, value: any) => {
+    setTempContent((prev: any) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleUpdateElementContent = async () => {
+    if (!selectedElement || !tempContent) return;
+
+    try {
+      await updateSectionData(selectedElement, {
+        content: tempContent,
+      });
+
+      // Update local state
+      setPageSections((prev) =>
+        prev.map((s) =>
+          s._id === selectedElement
+            ? {
+                ...s,
+                content: tempContent,
+              }
+            : s
+        )
+      );
+
+      // Clear selection
+      setSelectedElement(null);
+      setTempContent(null);
+    } catch (error) {
+      console.error("Error updating section content:", error);
+      addToast({
+        title: "Error",
+        description: "Failed to update section content",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1345,59 +827,76 @@ export default function EditorPage({ params }: { params: { id: string } }) {
 
   const confirmDeleteElement = () => {
     if (elementToDelete) {
-      const updatedSections = pageSections.filter(
-        (section) => section.id !== elementToDelete
-      );
-      setPageSections(updatedSections);
+      // const updatedSections = pageSections.filter(
+      //   (section) => section.id !== elementToDelete
+      // );
+      // setPageSections(updatedSections);
 
-      // Update the content for the current page
-      setPagesContent({
-        ...pagesContent,
-        [pageTitle]: updatedSections,
-      });
-
+      // // Update the content for the current page
+      // setPagesContent({
+      //   ...pagesContent,
+      //   [pageTitle]: updatedSections,
+      // });
+      deleteSectionData(elementToDelete);
       setSelectedElement(null);
       setElementToDelete(null);
       setShowDeleteDialog(false);
 
-      toast({
+      addToast({
         title: "Component deleted",
         description: "The component has been removed from the page",
       });
     }
   };
 
-  const handleMoveElement = (elementId: string, direction: "up" | "down") => {
-    const currentIndex = pageSections.findIndex(
-      (section) => section.id === elementId
-    );
-    if (currentIndex === -1) return;
+  const handleMoveElement = async (
+    element: Section,
+    direction: "up" | "down"
+  ) => {
+    const currentIndex = element.order_index;
+
+    if (!element) return;
 
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
 
     // Check if the new index is valid
     if (newIndex < 0 || newIndex >= pageSections.length) return;
 
+    await updateSectionsOrder(element._id, newIndex);
     // Create a new array with the element moved
-    const updatedSections = [...pageSections];
-    const [movedItem] = updatedSections.splice(currentIndex, 1);
-    updatedSections.splice(newIndex, 0, movedItem);
-
-    setPageSections(updatedSections);
-
-    // Update the content for the current page
-    setPagesContent({
-      ...pagesContent,
-      [pageTitle]: updatedSections,
-    });
   };
 
   const handleSave = async () => {
+    if (!pageId) {
+      console.log("No page selected");
+      addToast({
+        title: "Error",
+        description: "No page selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      // Simulate saving with a delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Save the current page data
+      await updatePageData(pageId, {
+        title: pageTitle,
+        slug: pageTitle.toLowerCase().replace(/\s+/g, "-"),
+        is_homepage: pageTitle.toLowerCase() === "home",
+      });
+
+      // Save all sections for the current page
+      for (const section of pageSections) {
+        await createNewSection({
+          page_id: pageId,
+          type: section.type,
+          label: section.label,
+          order_index: pageSections.indexOf(section),
+          content: section.content,
+        });
+      }
 
       // Show success message
       setShowSaveDialog(true);
@@ -1408,7 +907,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
       }
     } catch (error) {
       console.error("Error saving site:", error);
-      toast({
+      addToast({
         title: "Error saving site",
         description: "An unexpected error occurred while saving your site.",
         variant: "destructive",
@@ -1418,78 +917,74 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleSiteSettingsUpdate = (newSettings: any) => {
-    // Update the site settings
-    setSite({
-      ...site,
-      settings: newSettings,
-    });
+  const handleSiteSettingsUpdate = async (newSettings: any) => {
+    try {
+      // Update the site settings
+      await updateSiteSettingsData(id, newSettings);
 
-    // Close the settings panel
-    setShowSiteSettings(false);
+      // Close the settings panel
+      setShowSiteSettings(false);
 
-    // Show success message
-    toast({
-      title: "Settings updated",
-      description: "Your site design settings have been updated successfully.",
-    });
-  };
-
-  const handleUpdateElementContent = (elementId: string, newContent: any) => {
-    const updatedSections = pageSections.map((section) => {
-      if (section.id === elementId) {
-        return {
-          ...section,
-          content: {
-            ...section.content,
-            ...newContent,
-          },
-        };
-      }
-      return section;
-    });
-
-    setPageSections(updatedSections);
-
-    // Update the content for the current page
-    setPagesContent({
-      ...pagesContent,
-      [pageTitle]: updatedSections,
-    });
-  };
-
-  const handleAddPage = () => {
-    // Show a prompt to get the page name
-    const pageName = prompt("Enter page name:");
-    if (pageName && pageName.trim() !== "") {
-      // Add the page to the site pages
-      const updatedPages = [...site.pages, pageName.trim()];
-      setSite({
-        ...site,
-        pages: updatedPages,
+      // Show success message
+      addToast({
+        title: "Settings updated",
+        description:
+          "Your site design settings have been updated successfully.",
       });
-
-      // Create default content for the new page
-      const newPageContent = getDefaultPageContent("default");
-      setPagesContent({
-        ...pagesContent,
-        [pageName.trim()]: newPageContent,
-      });
-
-      // Switch to the new page and load default content
-      setPageTitle(pageName.trim());
-      setPageSections(newPageContent);
-
-      toast({
-        title: "Page added",
-        description: `Added ${pageName.trim()} page to the site`,
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      addToast({
+        title: "Error updating settings",
+        description:
+          "An unexpected error occurred while updating your settings.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleDeletePage = (page: string) => {
-    if (site.pages.length <= 1) {
-      toast({
+  const handleAddPage = async () => {
+    // Show a prompt to get the page name
+    const pageName = prompt("Enter page name:");
+    if (pageName && pageName.trim() !== "") {
+      try {
+        // Create new page in the context
+        await createNewPage({
+          site_id: id,
+          title: pageName.trim(),
+          slug: pageName.trim().toLowerCase().replace(/\s+/g, "-"),
+          is_homepage: false,
+          order_index: sitePages.length,
+        });
+
+        // Create default content for the new page
+        const newPageContent = getDefaultPageContent(pageName.trim());
+        setPagesContent({
+          ...pagesContent,
+          [pageName.trim()]: newPageContent,
+        });
+
+        // Switch to the new page and load default content
+        setPageTitle(pageName.trim());
+        setPageSections(newPageContent);
+
+        addToast({
+          title: "Page added",
+          description: `Added ${pageName.trim()} page to the site`,
+        });
+      } catch (error) {
+        console.error("Error adding page:", error);
+        addToast({
+          title: "Error adding page",
+          description: "An unexpected error occurred while adding the page.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleDeletePage = async (page: string) => {
+    if (sitePages.length <= 1) {
+      addToast({
         title: "Cannot delete page",
         description: "You must have at least one page in your site",
         variant: "destructive",
@@ -1501,68 +996,102 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     setShowDeletePageDialog(true);
   };
 
-  const confirmDeletePage = () => {
+  const confirmDeletePage = async () => {
     if (pageToDelete) {
-      // Remove the page from the site pages
-      const updatedPages = site.pages.filter((page) => page !== pageToDelete);
-      setSite({
-        ...site,
-        pages: updatedPages,
+      try {
+        // Find the page ID
+        const pageToDeleteObj = sitePages.find((p) => p.title === pageToDelete);
+        if (!pageToDeleteObj) return;
+
+        // Delete the page
+        await deletePageData(pageToDeleteObj._id);
+
+        // Remove the page content
+        const updatedPagesContent = { ...pagesContent };
+        delete updatedPagesContent[pageToDelete];
+        setPagesContent(updatedPagesContent);
+
+        // If the current page is being deleted, switch to the first available page
+        if (pageTitle === pageToDelete) {
+          const newCurrentPage = sitePages[0].title;
+          setPageTitle(newCurrentPage);
+          setPageSections(updatedPagesContent[newCurrentPage] || []);
+        }
+
+        setPageToDelete(null);
+        setShowDeletePageDialog(false);
+
+        addToast({
+          title: "Page deleted",
+          description: `Deleted ${pageToDelete} page from the site`,
+        });
+      } catch (error) {
+        console.error("Error deleting page:", error);
+        addToast({
+          title: "Error deleting page",
+          description: "An unexpected error occurred while deleting the page.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSwitchPage = async (page: Page) => {
+    if (!page._id) {
+      addToast({
+        title: "Error",
+        description: "No page selected",
+        variant: "destructive",
       });
+      return;
+    }
 
-      // Remove the page content
-      const updatedPagesContent = { ...pagesContent };
-      delete updatedPagesContent[pageToDelete];
-      setPagesContent(updatedPagesContent);
+    try {
+      // Save current page data
+      // await updatePageData(page._id, {
+      //   title: page.title,
+      //   slug: page.title.toLowerCase().replace(/\s+/g, "-"),
+      //   is_homepage: page.title.toLowerCase() === "home",
+      // });
 
-      // If the current page is being deleted, switch to the first available page
-      if (pageTitle === pageToDelete) {
-        const newCurrentPage = updatedPages[0];
-        setPageTitle(newCurrentPage);
-        setPageSections(updatedPagesContent[newCurrentPage] || []);
+      // // Save all sections for the current page
+      // for (const section of pageSections) {
+      //   await createNewSection({
+      //     page_id: page._id,
+      //     type: section.type,
+      //     label: section.label,
+      //     order_index: pageSections.indexOf(section),
+      //     content: section.content,
+      //   });
+      // }
+      setCurrentPage(page);
+      // Switch to the selected page
+      setPageTitle(page.title);
+
+      // Load the content for the selected page
+      if (pagesContent[page.title]) {
+        setPageSections(pagesContent[page.title]);
+      } else {
+        // If no content exists for this page, create default content
+        const defaultContent = getDefaultPageContent(page.title);
+        setPageSections(defaultContent);
+        setPagesContent({
+          ...pagesContent,
+          [page.title]: defaultContent,
+        });
       }
 
-      setPageToDelete(null);
-      setShowDeletePageDialog(false);
-
-      toast({
-        title: "Page deleted",
-        description: `Deleted ${pageToDelete} page from the site`,
+      // Clear selected element
+      setSelectedElement(null);
+    } catch (error) {
+      console.error("Error switching pages:", error);
+      addToast({
+        title: "Error switching pages",
+        description: "An unexpected error occurred while switching pages.",
+        variant: "destructive",
       });
     }
   };
-
-  const handleSwitchPage = (page: string) => {
-    // Save current page content
-    setPagesContent({
-      ...pagesContent,
-      [pageTitle]: pageSections,
-    });
-
-    // Switch to the selected page
-    setPageTitle(page);
-
-    // Load the content for the selected page
-    if (pagesContent[page]) {
-      setPageSections(pagesContent[page]);
-    } else {
-      // If no content exists for this page, create default content
-      const defaultContent = getDefaultPageContent(page);
-      setPageSections(defaultContent);
-      setPagesContent({
-        ...pagesContent,
-        [page]: defaultContent,
-      });
-    }
-
-    // Clear selected element
-    setSelectedElement(null);
-  };
-
-  // Get the selected element's data
-  const selectedElementData = selectedElement
-    ? pageSections.find((section) => section.id === selectedElement)
-    : null;
 
   const dropIndicatorStyle = `
   .drop-indicator {
@@ -1730,6 +1259,11 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     },
   ];
 
+  // Get the selected element's data
+  const selectedElementData = selectedElement
+    ? pageSectionsContext.find((section) => section._id === selectedElement)
+    : null;
+
   return (
     <div className="flex h-screen flex-col">
       {/* Top navbar */}
@@ -1825,16 +1359,6 @@ export default function EditorPage({ params }: { params: { id: string } }) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <img
-              src="/diverse-avatars.png"
-              alt="Avatar"
-              className="rounded-full"
-              height={32}
-              width={32}
-            />
-          </Button>
         </div>
       </header>
 
@@ -1861,20 +1385,26 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                   <h2 className="font-medium">Pages</h2>
                 </div>
                 <div className="mt-2 space-y-1 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
-                  {site.pages.map((page) => (
-                    <div key={page} className="flex items-center">
+                  {sitePages.map((page) => (
+                    <div key={page._id} className="flex items-center">
                       <Button
-                        variant={page === pageTitle ? "secondary" : "ghost"}
+                        variant={
+                          page.title === pageTitle ? "secondary" : "ghost"
+                        }
                         className="w-full justify-start"
-                        onClick={() => handleSwitchPage(page)}
+                        onClick={() => {
+                          handleSwitchPage(page);
+
+                          setPageTitle(page.title);
+                        }}
                       >
-                        {page}
+                        {page.title}
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 ml-1"
-                        onClick={() => handleDeletePage(page)}
+                        onClick={() => handleDeletePage(page.title)}
                       >
                         <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                       </Button>
@@ -2061,7 +1591,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                           <h3 className="text-sm font-medium mb-1">
                             School Components
                           </h3>
-                          <p classNameclassName="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             Specialized components for schools
                           </p>
                         </div>
@@ -2204,7 +1734,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
               >
                 {/* Page content */}
                 <div className="min-h-[800px] p-4 border-2 border-dashed border-muted-foreground/20 rounded-md">
-                  {pageSections.length === 0 && !isDragging && (
+                  {pageSectionsContext.length === 0 && !isDragging && (
                     <div className="h-full flex flex-col items-center justify-center text-center p-8">
                       <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                         <Plus className="h-8 w-8 text-primary" />
@@ -2246,16 +1776,16 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                   )}
-                  {pageSections.map((section) => (
+                  {pageSectionsContext.map((section) => (
                     <div
-                      key={section.id}
-                      data-section-id={section.id}
+                      key={section._id}
+                      data-section-id={section._id}
                       className={`mb-6 p-4 border rounded-md ${
-                        selectedElement === section.id
+                        selectedElement === section._id
                           ? "ring-2 ring-primary"
                           : "border-muted"
                       } bg-muted/20 cursor-pointer relative group`}
-                      onClick={() => handleElementSelect(section.id)}
+                      onClick={() => handleElementSelect(section._id)}
                     >
                       {/* Section controls */}
                       <div className="absolute right-2 top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -2269,7 +1799,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                                 className="h-6 w-6 bg-background/80 hover:bg-background"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleMoveElement(section.id, "up");
+                                  handleMoveElement(section, "up");
                                 }}
                                 disabled={pageSections.indexOf(section) === 0}
                               >
@@ -2292,7 +1822,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                                 className="h-6 w-6 bg-background/80 hover:bg-background"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleMoveElement(section.id, "down");
+                                  handleMoveElement(section, "down");
                                 }}
                                 disabled={
                                   pageSections.indexOf(section) ===
@@ -2318,7 +1848,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                                 className="h-6 w-6 bg-background/80 hover:bg-background hover:text-destructive"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteElement(section.id);
+                                  handleDeleteElement(section._id);
                                 }}
                               >
                                 <Trash className="h-4 w-4" />
@@ -2339,7 +1869,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                       {/* Section content - simplified visual representations */}
                       <div className="mt-6 pt-2">
                         {/* Simplified component previews - these would be more detailed in the actual implementation */}
-                        {section.type === "Hero" && (
+                        {section.type === "hero" && (
                           <div className="flex flex-col items-center text-center">
                             <div className="w-3/4 h-10 bg-muted rounded mb-4 flex items-center justify-center">
                               <span className="text-sm text-muted-foreground">
@@ -2361,7 +1891,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                           </div>
                         )}
 
-                        {section.type === "Heading" && (
+                        {section.type === "heading" && (
                           <div className="mt-6 text-center">
                             <h2 className={`text-2xl font-bold`}>
                               {section.content.text}
@@ -2369,7 +1899,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                           </div>
                         )}
 
-                        {section.type === "Paragraph" && (
+                        {section.type === "paragraph" && (
                           <div className="mt-6 text-center">
                             <p className="text-md text-muted-foreground">
                               {section.content.text}
@@ -2408,17 +1938,15 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                 </div>
 
                 <div className="space-y-4">
-                  {selectedElementData?.type === "Hero" && (
+                  {selectedElementData?.type === "hero" && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="hero-title">Title</Label>
                         <Input
                           id="hero-title"
-                          value={selectedElementData.content.title}
+                          value={tempContent?.title || ""}
                           onChange={(e) =>
-                            handleUpdateElementContent(selectedElement, {
-                              title: e.target.value,
-                            })
+                            handleContentChange("title", e.target.value)
                           }
                         />
                       </div>
@@ -2426,11 +1954,9 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                         <Label htmlFor="hero-subtitle">Subtitle</Label>
                         <Input
                           id="hero-subtitle"
-                          value={selectedElementData.content.subtitle}
+                          value={tempContent?.subtitle || ""}
                           onChange={(e) =>
-                            handleUpdateElementContent(selectedElement, {
-                              subtitle: e.target.value,
-                            })
+                            handleContentChange("subtitle", e.target.value)
                           }
                         />
                       </div>
@@ -2438,11 +1964,9 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                         <Label htmlFor="hero-cta">Button Text</Label>
                         <Input
                           id="hero-cta"
-                          value={selectedElementData.content.ctaText}
+                          value={tempContent?.ctaText || ""}
                           onChange={(e) =>
-                            handleUpdateElementContent(selectedElement, {
-                              ctaText: e.target.value,
-                            })
+                            handleContentChange("ctaText", e.target.value)
                           }
                         />
                       </div>
@@ -2450,28 +1974,39 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                         <Label htmlFor="hero-link">Button Link</Label>
                         <Input
                           id="hero-link"
-                          value={selectedElementData.content.ctaLink}
+                          value={tempContent?.ctaLink || ""}
                           onChange={(e) =>
-                            handleUpdateElementContent(selectedElement, {
-                              ctaLink: e.target.value,
-                            })
+                            handleContentChange("ctaLink", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="hero-background">
+                          Background Image URL
+                        </Label>
+                        <Input
+                          id="hero-background"
+                          value={tempContent?.backgroundImage || ""}
+                          onChange={(e) =>
+                            handleContentChange(
+                              "backgroundImage",
+                              e.target.value
+                            )
                           }
                         />
                       </div>
                     </>
                   )}
 
-                  {selectedElementData?.type === "Heading" && (
+                  {selectedElementData?.type === "heading" && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="heading-text">Heading Text</Label>
                         <Input
                           id="heading-text"
-                          value={selectedElementData.content.text}
+                          value={tempContent?.text || ""}
                           onChange={(e) =>
-                            handleUpdateElementContent(selectedElement, {
-                              text: e.target.value,
-                            })
+                            handleContentChange("text", e.target.value)
                           }
                         />
                       </div>
@@ -2480,11 +2015,9 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                         <select
                           id="heading-level"
                           className="w-full rounded-md border border-input bg-background px-3 py-2"
-                          value={selectedElementData.content.level}
+                          value={tempContent?.level || 2}
                           onChange={(e) =>
-                            handleUpdateElementContent(selectedElement, {
-                              level: Number.parseInt(e.target.value),
-                            })
+                            handleContentChange("level", Number(e.target.value))
                           }
                         >
                           <option value="1">Large (H1)</option>
@@ -2495,32 +2028,12 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                     </>
                   )}
 
-                  {selectedElementData?.type === "Paragraph" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="paragraph-text">Text Content</Label>
-                        <textarea
-                          id="paragraph-text"
-                          className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2"
-                          value={selectedElementData.content.text}
-                          onChange={(e) =>
-                            handleUpdateElementContent(selectedElement, {
-                              text: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Add more component type editors as needed */}
-
                   <div className="pt-4">
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => setSelectedElement(null)}
+                      onClick={handleUpdateElementContent}
                     >
                       Done
                     </Button>
@@ -2680,7 +2193,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              variant="destructive"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={confirmDeleteElement}
             >
               Delete
@@ -2707,10 +2220,10 @@ export default function EditorPage({ params }: { params: { id: string } }) {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              variant="destructive"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={confirmDeletePage}
             >
-              Delete Page
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2727,9 +2240,9 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           </AlertDialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SiteSettingsPanel
-              siteId={params.id}
+              siteId={id}
               settings={
-                site.settings || {
+                selectedSite?.settings || {
                   colors: colorPalettes[0].colors,
                   fonts: fontStyles[0],
                 }
@@ -2740,9 +2253,11 @@ export default function EditorPage({ params }: { params: { id: string } }) {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Preview</h3>
               <DesignPreview
-                colors={site.settings?.colors || colorPalettes[0].colors}
+                colors={
+                  selectedSite?.settings?.colors || colorPalettes[0].colors
+                }
                 fonts={
-                  site.settings?.fonts || {
+                  selectedSite?.settings?.fonts || {
                     heading: fontStyles[0].heading,
                     body: fontStyles[0].body,
                   }

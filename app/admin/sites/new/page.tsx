@@ -22,8 +22,8 @@ import type { Site, SiteSettings } from "@/lib/types";
 import { useOrganizationData } from "@/contexts/organization-data-context";
 
 export default function NewSitePage() {
-  const { createNewSite, sites } = useOrganizationData();
-  console.log("sites", sites);
+  const { createNewSite, sites, fetchSitesData, user } = useOrganizationData();
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get("template");
@@ -42,23 +42,27 @@ export default function NewSitePage() {
     setError(null);
 
     try {
-      const newSite = await createNewSite({
-        name: formData.name,
-        domain: `${formData.subdomain}.edusite.com`,
-      });
+      if (user?.schoolIds && user.schoolIds.length > 0) {
+        const newSite = await createNewSite({
+          name: formData.name,
+          domain: `${formData.subdomain}.edusite.com`,
+          schoolId: user?.schoolIds[0],
+        });
 
-      toast.success("Website created successfully!", {
-        description:
-          "You'll now be taken to the editor to customize your site.",
-      });
+        toast.success("Website created successfully!", {
+          description:
+            "You'll now be taken to the editor to customize your site.",
+        });
 
-      // After creating the site, find it in the updated sites list
+        // After creating the site, find it in the updated sites list
 
-      if (!newSite?._id) {
-        throw new Error("Site created but no ID returned");
+        if (!newSite?._id) {
+          throw new Error("Site created but no ID returned");
+        }
+        router.push(`/admin/sites/${newSite._id}/editor`);
+      } else {
+        setError("Invalid School");
       }
-
-      router.push(`/admin/sites/${newSite._id}/editor`);
     } catch (error: unknown) {
       console.error("Error creating site:", error);
       const errorMessage =
