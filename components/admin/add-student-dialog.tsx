@@ -1,38 +1,65 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AddStudentDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onAdd: (student: any) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (student: {
+    fullName: string;
+    email: string;
+    password: string;
+  }) => void;
 }
 
-export function AddStudentDialog({ isOpen, onClose, onAdd }: AddStudentDialogProps) {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [grade, setGrade] = useState("")
+export function AddStudentDialog({
+  isOpen,
+  onClose,
+  onAdd,
+}: AddStudentDialogProps) {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+
+    // Basic validation
+    if (!fullName.trim() || !email.trim() || !password.trim()) {
+      return;
+    }
+
+    if (password.length < 8) {
+      return;
+    }
+
     onAdd({
-      name,
+      fullName,
       email,
-      grade,
-    })
+      password,
+    });
 
     // Reset form
-    setName("")
-    setEmail("")
-    setGrade("")
-  }
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFullName("");
+    setEmail("");
+    setPassword("");
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -43,11 +70,11 @@ export function AddStudentDialog({ isOpen, onClose, onAdd }: AddStudentDialogPro
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="fullName">Full Name</Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter student's full name"
                 required
               />
@@ -64,30 +91,35 @@ export function AddStudentDialog({ isOpen, onClose, onAdd }: AddStudentDialogPro
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="grade">Grade</Label>
-              <Select value={grade} onValueChange={setGrade} required>
-                <SelectTrigger id="grade">
-                  <SelectValue placeholder="Select grade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="9">9th Grade</SelectItem>
-                  <SelectItem value="10">10th Grade</SelectItem>
-                  <SelectItem value="11">11th Grade</SelectItem>
-                  <SelectItem value="12">12th Grade</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password (minimum 8 characters)"
+                required
+              />
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!name.trim() || !email.trim() || !grade}>
+            <Button
+              type="submit"
+              disabled={
+                !fullName.trim() ||
+                !email.trim() ||
+                !password.trim() ||
+                password.length < 6
+              }
+            >
               Add Student
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

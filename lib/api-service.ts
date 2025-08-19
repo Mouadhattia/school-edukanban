@@ -5,14 +5,12 @@ import {
   getSharedBoards as getSharedBoardsData,
   getStudentBoards as getStudentBoardsData,
   getStudentTasks as getStudentTasksData,
-  getUsers,
   getOrganizations,
   getOrganizationMembers,
   getOrganizationActivity,
   getUserById,
   getBoardById,
 } from "@/lib/data";
-
 import type {
   Template,
   Board,
@@ -25,6 +23,16 @@ import type {
   Page,
   Section,
   SiteSettings,
+  Subject,
+  UsersData,
+  GetUsersPayload,
+  GetClassesPayload,
+  ClassesData,
+  Classroom,
+  Level,
+  StudyPeriod,
+  FullClassRoomCreationData,
+  Course,
 } from "@/lib/types";
 
 // Configuration flag to switch between mock and real API
@@ -276,16 +284,6 @@ export async function fetchOrganizationActivity(
   return apiRequest<Activity[]>(`/organizations/${orgId}/activity`);
 }
 
-// User APIs
-export async function fetchUsers(): Promise<User[]> {
-  if (USE_MOCK_DATA) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return getUsers();
-  }
-
-  return apiRequest<User[]>("/users");
-}
-
 export async function fetchUserById(userId: string): Promise<User | undefined> {
   if (USE_MOCK_DATA) {
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -472,7 +470,7 @@ export async function updateNotificationSettings(settings: any): Promise<void> {
 }
 
 // Site APIs
-export async function createSite(site: Partial<Site>): Promise<Site> {
+export async function createSite(site: any): Promise<Site> {
   if (USE_MOCK_DATA) {
     await new Promise((resolve) => setTimeout(resolve, 800));
     const newSite = {
@@ -579,25 +577,8 @@ export async function deleteSite(id: string): Promise<void> {
 export async function updateSiteSettings(
   id: string,
   settings: Partial<SiteSettings>
-): Promise<Site> {
-  if (USE_MOCK_DATA) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const site = await getSite(id);
-    if (!site) throw new Error("Site not found");
-
-    return {
-      ...site,
-      settings: {
-        ...site.settings,
-        ...settings,
-        updated_at: new Date(),
-      },
-      updated_at: new Date(),
-      last_updated: new Date(),
-    };
-  }
-
-  return apiRequest<Site>(`/builder/sites/${id}/settings`, {
+): Promise<SiteSettings> {
+  return apiRequest<SiteSettings>(`/builder/sites/${id}/settings`, {
     method: "PUT",
     body: JSON.stringify(settings),
   });
@@ -798,4 +779,612 @@ export async function getProfile(token: string): Promise<User> {
     },
   });
 }
-//sites
+//Users
+
+// Create user API - accepts partial user data
+export async function createUser(
+  userData: Partial<User>,
+  token: string
+): Promise<{ message: string; user: User }> {
+  return apiRequest<{ message: string; user: User }>("/admin/users", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(userData),
+  });
+}
+
+// Update user by ID API - accepts partial user data
+export async function updateUser(
+  userId: string,
+  userData: Partial<User>,
+  token: string
+): Promise<{ message: string; user: User }> {
+  return apiRequest<{ message: string; user: User }>(`/admin/users/${userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(userData),
+  });
+}
+
+// Delete user by ID API
+export async function deleteUser(
+  userId: string,
+  token: string
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>(`/admin/users/${userId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getUsers(
+  payload: GetUsersPayload,
+  token: string
+): Promise<UsersData | null> {
+  return apiRequest<
+    | UsersData
+    | {
+        users: [];
+        totalPages: 1;
+        currentPage: 1;
+        totalUsers: 0;
+      }
+  >(
+    `/admin/users?page=${payload.page}&&limit=${payload.limit}&&role=${payload.role}&&search=${payload.search}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+}
+
+// clasRoom
+// getClasses
+export async function getClasses(
+  payload: GetClassesPayload,
+  token: string
+): Promise<ClassesData | null> {
+  return apiRequest<ClassesData | null>(`/school/classrooms`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// getClassesById
+export async function getClassesById(
+  id: string,
+  token: string
+): Promise<Classroom | null> {
+  return apiRequest<Classroom | null>(`/school/classrooms/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+// createClassroom
+export async function createClassroom(
+  classroom: Partial<Classroom>,
+  token: string
+): Promise<Classroom> {
+  return apiRequest<Classroom>("/school/classrooms", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(classroom),
+  });
+}
+// updateClassroom
+export async function updateClassroom(
+  id: string,
+  classroom: Partial<Classroom>,
+  token: string
+): Promise<Classroom> {
+  return apiRequest<Classroom>(`/school/classrooms/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(classroom),
+  });
+}
+// deleteClassroom
+export async function deleteClassroom(
+  id: string,
+  token: string
+): Promise<Classroom> {
+  return apiRequest<Classroom>(`/school/classrooms/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// Subjects
+export async function getAllSubjects(
+  token?: string,
+  query?: { page: number; limit: number; search: string; schoolId: string }
+): Promise<{
+  subjects: Subject[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  // query is optional
+  const queryString = query
+    ? `?page=${query.page}&limit=${query.limit}&search=${query.search}&schoolId=${query.schoolId}`
+    : "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<{
+    subjects: Subject[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/school/subjects${queryString}`, headers ? { headers } : undefined);
+}
+
+export async function getSubjectById(
+  id: string,
+  token?: string
+): Promise<Subject> {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<Subject>(
+    `/school/subjects/${id}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function createSubject(
+  subject: Partial<Subject>,
+  token: string
+): Promise<Subject> {
+  return apiRequest<Subject>("/school/subjects", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(subject),
+  });
+}
+
+export async function updateSubject(
+  id: string,
+  subject: Partial<Subject>,
+  token: string
+): Promise<Subject> {
+  return apiRequest<Subject>(`/school/subjects/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(subject),
+  });
+}
+
+export async function deleteSubject(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/school/subjects/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// Levels
+export async function getAllLevels(
+  token?: string,
+  query?: { page: number; limit: number; search: string; schoolId: string }
+): Promise<{ levels: Level[]; total: number; page: number }> {
+  const queryString = query
+    ? `?page=${query.page}&limit=${query.limit}&search=${query.search}&schoolId=${query.schoolId}`
+    : "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<{ levels: Level[]; total: number; page: number }>(
+    `/school/levels${queryString}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function getLevelById(id: string, token?: string): Promise<any> {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<any>(
+    `/school/levels/${id}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function createLevel(level: any, token: string): Promise<any> {
+  return apiRequest<any>("/school/levels", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(level),
+  });
+}
+
+export async function updateLevel(
+  id: string,
+  level: any,
+  token: string
+): Promise<any> {
+  return apiRequest<any>(`/school/levels/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(level),
+  });
+}
+
+export async function deleteLevel(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/school/levels/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// Rooms
+export async function getAllRooms(
+  token?: string,
+  query?: { schoolId: string; search: string }
+): Promise<any[]> {
+  const queryString = query
+    ? `?schoolId=${query.schoolId}&search=${query.search}`
+    : "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<any[]>(
+    `/school/rooms${queryString}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function getRoomById(id: string, token?: string): Promise<any> {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<any>(
+    `/school/rooms/${id}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function createRoom(room: any, token: string): Promise<any> {
+  return apiRequest<any>("/school/rooms", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(room),
+  });
+}
+
+export async function updateRoom(
+  id: string,
+  room: any,
+  token: string
+): Promise<any> {
+  return apiRequest<any>(`/school/rooms/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(room),
+  });
+}
+
+export async function deleteRoom(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/school/rooms/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// Sessions
+export async function getAllSessions(
+  token?: string,
+  query?: { classRoomId?: string; subjectId?: string }
+): Promise<any[]> {
+  const queryString = query
+    ? `?classRoomId=${query.classRoomId}&subjectId=${query.subjectId}`
+    : "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<any[]>(
+    `/school/sessions${queryString}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function getSessionById(id: string, token?: string): Promise<any> {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<any>(
+    `/school/sessions/${id}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function createSession(session: any, token: string): Promise<any> {
+  return apiRequest<any>("/school/sessions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(session),
+  });
+}
+
+export async function updateSession(
+  id: string,
+  session: any,
+  token: string
+): Promise<any> {
+  return apiRequest<any>(`/school/sessions/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(session),
+  });
+}
+
+export async function deleteSession(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/school/sessions/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// Presences
+export async function getAllPresences(
+  token?: string,
+  sessionId?: string
+): Promise<any[]> {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<any[]>(
+    `/school/presences?sessionId=${sessionId}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function getPresenceById(
+  id: string,
+  token?: string
+): Promise<any> {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<any>(
+    `/school/presences/${id}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function createPresence(
+  presence: any,
+  token: string
+): Promise<any> {
+  return apiRequest<any>("/school/presences", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(presence),
+  });
+}
+
+export async function updatePresence(
+  id: string,
+  presence: any,
+  token: string
+): Promise<any> {
+  return apiRequest<any>(`/school/presences/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(presence),
+  });
+}
+
+export async function deletePresence(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/school/presences/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// study period
+export async function getAllStudyPeriods(
+  token?: string,
+  query?: { schoolId: string; search: string }
+): Promise<StudyPeriod[]> {
+  const queryString = query
+    ? `?schoolId=${query.schoolId}&search=${query.search}`
+    : "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<StudyPeriod[]>(
+    `/school/study-periods${queryString}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function getStudyPeriodById(
+  id: string,
+  token?: string
+): Promise<StudyPeriod> {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<StudyPeriod>(
+    `/school/study-periods/${id}`,
+    headers ? { headers } : undefined
+  );
+}
+
+export async function createStudyPeriod(
+  studyPeriod: Partial<StudyPeriod>,
+  token: string
+): Promise<StudyPeriod> {
+  return apiRequest<StudyPeriod>("/school/study-periods", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(studyPeriod),
+  });
+}
+
+export async function updateStudyPeriod(
+  id: string,
+  studyPeriod: Partial<StudyPeriod>,
+  token: string
+): Promise<StudyPeriod> {
+  return apiRequest<StudyPeriod>(`/school/study-periods/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(studyPeriod),
+  });
+}
+
+export async function deleteStudyPeriod(
+  id: string,
+  token: string
+): Promise<void> {
+  return apiRequest<void>(`/school/study-periods/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// create full class room
+export async function createFullClassRoom(
+  data: FullClassRoomCreationData,
+  token: string
+): Promise<Classroom> {
+  return apiRequest<Classroom>("/school/classrooms/full", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+// course
+export async function createCourse(
+  data: Partial<Course>,
+  token: string
+): Promise<Course> {
+  return apiRequest<Course>("/school/courses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getCourseById(
+  id: string,
+  token: string
+): Promise<Course> {
+  return apiRequest<Course>(`/school/courses/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function updateCourse(
+  id: string,
+  data: Partial<Course>,
+  token: string
+): Promise<Course> {
+  return apiRequest<Course>(`/school/courses/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCourse(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/school/courses/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getAllCourses(
+  token: string,
+  query: { schoolId: string; search: string; page: number; limit: number }
+): Promise<{ courses: Course[]; total: number; page: number; limit: number }> {
+  const queryString = query
+    ? `?schoolId=${query.schoolId}&search=${query.search}&page=${query.page}&limit=${query.limit} `
+    : "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  return apiRequest<{
+    courses: Course[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/school/courses${queryString}`, {
+    headers: headers ? headers : undefined,
+  });
+}
+
+//  upload image
+export async function uploadImage(
+  image: File,
+  token: string
+): Promise<{ url: string; filename: string }> {
+  const formData = new FormData();
+  formData.append("image", image);
+  // send to req.files
+
+  return apiRequest<{ url: string; filename: string }>(
+    "/builder/upload/image",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+}

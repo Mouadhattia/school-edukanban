@@ -68,6 +68,12 @@ export function AdminSidebar({ className, onToggle }: AdminSidebarProps) {
           icon: Calendar,
           active: pathname === "/admin/boards",
         },
+        {
+          title: "Courses",
+          href: "/admin/courses",
+          icon: BookOpen,
+          active: pathname === "/admin/courses",
+        },
       ],
     },
     {

@@ -88,6 +88,13 @@ export function SiteSettingsPanel({ siteId, settings, onUpdate, onClose }: SiteS
     })
   }
 
+  // update Logo 
+   const updateLogo =()=>{
+
+
+   }
+  
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -134,9 +141,7 @@ export function SiteSettingsPanel({ siteId, settings, onUpdate, onClose }: SiteS
           <TabsContent value="advanced" className="space-y-6">
             <div>
               <h3 className="text-lg font-medium mb-4">Advanced Settings</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Advanced settings will be available in a future update.
-              </p>
+               {}
             </div>
           </TabsContent>
         </Tabs>

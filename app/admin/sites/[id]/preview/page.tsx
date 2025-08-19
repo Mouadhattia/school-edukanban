@@ -1,104 +1,126 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, BookOpen, Eye, Layers, RefreshCw, Smartphone, Tablet } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  ArrowLeft,
+  BookOpen,
+  Eye,
+  Layers,
+  RefreshCw,
+  Smartphone,
+  Tablet,
+} from "lucide-react";
+import { useOrganizationData } from "@/contexts/organization-data-context";
 
 interface Site {
-  _id: string
-  name: string
-  domain: string
-  customDomain?: string | null
-  status: "Draft" | "Published"
-  template: string
+  _id: string;
+  name: string;
+  domain: string;
+  customDomain?: string | null;
+  status: "Draft" | "Published";
+  template: string;
   pages: Array<{
-    id: string
-    name: string
-    slug: string
-    isHomePage: boolean
-  }>
+    id: string;
+    name: string;
+    slug: string;
+    isHomePage: boolean;
+  }>;
   settings: {
     colors: {
-      primary: string
-      secondary: string
-      accent: string
-      background: string
-      text: string
-    }
+      primary: string;
+      secondary: string;
+      accent: string;
+      background: string;
+      text: string;
+    };
     fonts: {
-      heading: string
-      body: string
-    }
-  }
-  createdAt: string
-  updatedAt: string
+      heading: string;
+      body: string;
+    };
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function SitePreviewPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const [site, setSite] = useState<Site | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [activeView, setActiveView] = useState<"desktop" | "tablet" | "mobile">("desktop")
-  const [currentPage, setCurrentPage] = useState("home")
-  const [previewError, setPreviewError] = useState<string | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
+export default function SitePreviewPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const router = useRouter();
 
+  const { user, courses, getAllCourses } = useOrganizationData();
+
+  const [site, setSite] = useState<Site | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState<"desktop" | "tablet" | "mobile">(
+    "desktop"
+  );
+  const [currentPage, setCurrentPage] = useState("home");
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+ 
   // Fetch site data from the database
   useEffect(() => {
     const fetchSite = async () => {
       try {
-        setLoading(true)
-        setPreviewError(null)
+        setLoading(true);
+        setPreviewError(null);
 
-        const response = await fetch(`/api/sites/${params.id}`)
+        const response = await fetch(`/api/sites/${params.id}`);
 
         if (!response.ok) {
           if (response.status === 404) {
-            setPreviewError("Site not found. Please check the site ID and try again.")
+            setPreviewError(
+              "Site not found. Please check the site ID and try again."
+            );
           } else if (response.status === 401) {
-            setPreviewError("You don't have permission to view this site.")
+            setPreviewError("You don't have permission to view this site.");
           } else {
-            setPreviewError("Failed to load site data. Please try again later.")
+            setPreviewError(
+              "Failed to load site data. Please try again later."
+            );
           }
-          setLoading(false)
-          return
+          setLoading(false);
+          return;
         }
 
-        const siteData = await response.json()
-        setSite(siteData)
+        const siteData = await response.json();
+        setSite(siteData);
 
         // Set the current page to the home page if it exists
-        const homePage = siteData.pages?.find((page: any) => page.isHomePage)
+        const homePage = siteData.pages?.find((page: any) => page.isHomePage);
         if (homePage) {
-          setCurrentPage(homePage.slug)
+          setCurrentPage(homePage.slug);
         } else if (siteData.pages?.length > 0) {
-          setCurrentPage(siteData.pages[0].slug)
+          setCurrentPage(siteData.pages[0].slug);
         } else {
-          setCurrentPage("home")
+          setCurrentPage("home");
         }
 
-        setLoading(false)
+        setLoading(false);
       } catch (error) {
-        console.error("Error fetching site:", error)
-        setPreviewError("Failed to load site data. Please try again later.")
-        setLoading(false)
+        console.error("Error fetching site:", error);
+        setPreviewError("Failed to load site data. Please try again later.");
+        setLoading(false);
       }
-    }
+    };
 
     if (params.id) {
-      fetchSite()
+      fetchSite();
     }
-  }, [params.id])
+  }, [params.id]);
 
   // Function to refresh the preview
   const refreshPreview = () => {
-    setRefreshKey((prev) => prev + 1)
-    setPreviewError(null)
-  }
+    setRefreshKey((prev) => prev + 1);
+    setPreviewError(null);
+  };
 
   if (loading) {
     return (
@@ -108,7 +130,7 @@ export default function SitePreviewPage({ params }: { params: { id: string } }) 
           <p className="text-muted-foreground">Loading preview...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!site) {
@@ -117,34 +139,40 @@ export default function SitePreviewPage({ params }: { params: { id: string } }) 
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Site Not Found</h1>
           <p className="text-muted-foreground mb-6">
-            The site you're looking for doesn't exist or you don't have access to it.
+            The site you're looking for doesn't exist or you don't have access
+            to it.
           </p>
           <Button asChild>
             <Link href="/dashboard/sites">Back to Sites</Link>
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   // Get available pages from the site data
   const availablePages = site.pages || [
     { id: "home", name: "Home", slug: "home", isHomePage: true },
     { id: "about", name: "About", slug: "about", isHomePage: false },
-    { id: "academics", name: "Academics", slug: "academics", isHomePage: false },
+    {
+      id: "academics",
+      name: "Academics",
+      slug: "academics",
+      isHomePage: false,
+    },
     { id: "contact", name: "Contact", slug: "contact", isHomePage: false },
-  ]
+  ];
 
   const getViewportWidth = () => {
     switch (activeView) {
       case "mobile":
-        return "375px"
+        return "375px";
       case "tablet":
-        return "768px"
+        return "768px";
       default:
-        return "100%"
+        return "100%";
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -172,7 +200,11 @@ export default function SitePreviewPage({ params }: { params: { id: string } }) 
             </Link>
           </Button>
           <Button size="sm" asChild>
-            <a href={`/preview/${params.id}/home`} target="_blank" rel="noopener noreferrer">
+            <a
+              href={`/preview/${params.id}/home`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -200,23 +232,37 @@ export default function SitePreviewPage({ params }: { params: { id: string } }) 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold">{site.name} Preview</h1>
-            <p className="text-sm text-muted-foreground">Previewing how your site will look to visitors</p>
+            <p className="text-sm text-muted-foreground">
+              Previewing how your site will look to visitors
+            </p>
             <div className="flex items-center gap-2 mt-1">
               <span
                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  site.status === "Published" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                  site.status === "Published"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
                 }`}
               >
                 {site.status}
               </span>
-              <span className="text-xs text-muted-foreground">{site.customDomain || site.domain}</span>
+              <span className="text-xs text-muted-foreground">
+                {site.customDomain || site.domain}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Tabs value={currentPage} onValueChange={setCurrentPage} className="w-auto">
+            <Tabs
+              value={currentPage}
+              onValueChange={setCurrentPage}
+              className="w-auto"
+            >
               <TabsList className="grid grid-cols-4">
                 {availablePages.slice(0, 4).map((page) => (
-                  <TabsTrigger key={page.id} value={page.slug} className="capitalize text-xs">
+                  <TabsTrigger
+                    key={page.id}
+                    value={page.slug}
+                    className="capitalize text-xs"
+                  >
                     {page.name}
                   </TabsTrigger>
                 ))}
@@ -271,7 +317,11 @@ export default function SitePreviewPage({ params }: { params: { id: string } }) 
           <Alert variant="destructive" className="mb-4 mx-auto max-w-3xl">
             <AlertDescription className="flex flex-col gap-4">
               <p>{previewError}</p>
-              <Button onClick={refreshPreview} variant="outline" className="w-fit">
+              <Button
+                onClick={refreshPreview}
+                variant="outline"
+                className="w-fit"
+              >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh Preview
               </Button>
@@ -294,5 +344,5 @@ export default function SitePreviewPage({ params }: { params: { id: string } }) 
         )}
       </div>
     </div>
-  )
+  );
 }

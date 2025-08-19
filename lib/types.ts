@@ -62,6 +62,8 @@ export interface User {
   createdAt?: Date;
   updatedAt?: Date;
   schoolIds: string[];
+  password?: string;
+  schoolId?: string;
 }
 
 // Update the Board interface to include classId (singular) and templateId
@@ -237,7 +239,7 @@ export interface Template {
   standards?: string[]; // e.g., ["CCSS.MATH.CONTENT.5.NBT.A.1"]
   pricing: TemplatePricing;
   status: "draft" | "published" | "archived" | "pending_approval" | "rejected";
-  visibility: "private" | "organization" | "public"; // Who can see this template
+  visibility?: "private" | "organization" | "public"; // Who can see this template
   stats: TemplateStats;
   restrictedToSchools?: string[]; // School IDs that can access this template
   versions: TemplateVersion[]; // Version history
@@ -251,7 +253,6 @@ export interface Template {
   moderationNotes?: string;
   isPurchased?: boolean; // Whether the current user/school has purchased this template
   accessGranted?: string[]; // IDs of teachers who have been granted access to this template
-  visibility: string;
 }
 
 export interface TemplateCollaborator {
@@ -495,8 +496,12 @@ export interface PaginationMeta {
 }
 
 export interface Subject {
-  id: string;
+  _id: string;
   name: string;
+  description?: string;
+  schoolId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 //sites
@@ -576,6 +581,143 @@ export type SectionType =
   | "image"
   | "gallery"
   | "video"
-  | "faq";
+  | "faq"
+  | "courses"
+  | "products"
+  | "carousel"
+  | "allProducts"
+  | "contact_form";
 
-// Section Content Types
+export interface UsersData {
+  users?: User[];
+
+  totalPages?: number;
+  currentPage?: number;
+  totalUsers?: number;
+}
+export interface GetUsersPayload {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: UserRole;
+}
+// classRoom
+export interface Classroom {
+  _id: string;
+  name: string;
+  description?: string;
+  status: "active" | "archived";
+  schoolId: School | string; // It can be a full object or just the ID
+  createdAt: string;
+  updatedAt: string;
+  levelId: string | Level;
+  studyPeriod: string | StudyPeriod;
+}
+// GetClassesPayload
+export interface GetClassesPayload {
+  page?: number;
+  limit?: number;
+  search?: string;
+  schoolId: string;
+  fromDate: string;
+  toDate: string;
+}
+// ClassesData
+export interface ClassesData {
+  classes?: Classroom[];
+  totalPages?: number;
+  currentPage?: number;
+  totalClasses?: number;
+}
+
+// level
+export interface Level {
+  _id: string;
+  name: string;
+  schoolId: string;
+  createdAt: string;
+  updatedAt: string;
+  description?: string;
+}
+// room
+export interface Room {
+  _id: string;
+  name: string;
+  schoolId: string;
+  createdAt: string;
+  updatedAt: string;
+  capacity: number;
+  location: "online" | "local";
+}
+// session
+export interface Session {
+  _id: string;
+  title: string;
+  classRoom: string | Classroom;
+  subject: string | Subject;
+  studyPeriod: any;
+  teacher: string | User;
+  weeklySchedule: any;
+  createdAt: string;
+  updatedAt: string;
+}
+// presence
+export interface Presence {
+  _id: string;
+  session: string | Session;
+  student: string | User;
+  date: Date;
+  status: "present" | "absent" | "late" | "excused";
+  createdAt: string;
+  updatedAt: string;
+  comment?: string;
+}
+// study period
+export interface StudyPeriod {
+  _id: string;
+  name: string;
+  description?: string;
+  startTime?: Date;
+  endTime?: Date;
+  startDate?: Date;
+  endDate?: Date;
+  schoolId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// weekly schedule
+export interface WeeklySchedule {
+  _id: string;
+  weeklySchedule: Record<string, { start: string; end: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FullClassRoomCreationData {
+  name: string;
+  schoolId: string;
+  description?: string;
+  courseName: string; // Fixed typo from coureName
+  subjectId: string;
+  teacherId: string;
+  weeklySchedule: Record<string, { start: string; end: string }>;
+  levelId: string;
+  roomId: string;
+  studyPeriodId: string;
+  status?: "active" | "archived";
+}
+
+// course
+export interface Course {
+  _id: string;
+  name: string;
+  description?: string;
+  school: string | School;
+  price: number;
+  duration: number;
+  image: string;
+  video: string;
+  createdAt: string;
+  updatedAt: string;
+}

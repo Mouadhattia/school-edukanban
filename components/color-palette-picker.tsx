@@ -1,25 +1,43 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { HelpTooltip } from "./help-tooltip"
+import { useState, useRef } from "react";
+import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { HelpTooltip } from "./help-tooltip";
 
 export interface ColorPalette {
-  id: string
-  name: string
-  description: string
-  category: "elementary" | "middle" | "high" | "university" | "modern" | "traditional" | "vibrant"
+  id: string;
+  name: string;
+  description: string;
+  category:
+    | "elementary"
+    | "middle"
+    | "high"
+    | "university"
+    | "modern"
+    | "traditional"
+    | "vibrant";
   colors: {
-    primary: string
-    secondary: string
-    accent: string
-    background: string
-    text: string
-  }
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text: string;
+  };
 }
 
 // Collection of modern color palettes
@@ -31,10 +49,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "elementary",
     colors: {
       primary: "#FF6B6B",
+      text: "#E05555",
       secondary: "#4ECDC4",
       accent: "#FFE66D",
       background: "#FFFFFF",
-      text: "#2D3748",
     },
   },
   {
@@ -44,10 +62,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "elementary",
     colors: {
       primary: "#98C1D9",
+      text: "#88AFC8",
       secondary: "#E0FBFC",
       accent: "#EE6C4D",
       background: "#F7FFF7",
-      text: "#293241",
     },
   },
   {
@@ -57,10 +75,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "middle",
     colors: {
       primary: "#3A86FF",
+      text: "#2E6BCC",
       secondary: "#8338EC",
       accent: "#FF006E",
       background: "#FFFFFF",
-      text: "#14213D",
     },
   },
   {
@@ -70,10 +88,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "high",
     colors: {
       primary: "#1A535C",
+      text: "#184A52",
       secondary: "#4ECDC4",
       accent: "#FF6B6B",
       background: "#F7FFF7",
-      text: "#2B2D42",
     },
   },
   {
@@ -83,10 +101,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "university",
     colors: {
       primary: "#003049",
+      text: "#00263A",
       secondary: "#D62828",
       accent: "#F77F00",
       background: "#FCFCFC",
-      text: "#003049",
     },
   },
   {
@@ -96,10 +114,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "modern",
     colors: {
       primary: "#2B2D42",
+      text: "#26283A",
       secondary: "#8D99AE",
       accent: "#EF233C",
       background: "#EDF2F4",
-      text: "#2B2D42",
     },
   },
   {
@@ -109,10 +127,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "traditional",
     colors: {
       primary: "#14213D",
+      text: "#101830",
       secondary: "#FCA311",
       accent: "#E5E5E5",
       background: "#FFFFFF",
-      text: "#000000",
     },
   },
   {
@@ -122,10 +140,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "vibrant",
     colors: {
       primary: "#6A0572",
+      text: "#58045E",
       secondary: "#AB83A1",
       accent: "#F7AEF8",
       background: "#FFFFFF",
-      text: "#2D3748",
     },
   },
   {
@@ -135,10 +153,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "modern",
     colors: {
       primary: "#3A506B",
+      text: "#32445E",
       secondary: "#5BC0BE",
       accent: "#0B132B",
       background: "#FFFFFF",
-      text: "#1C2541",
     },
   },
   {
@@ -148,13 +166,12 @@ export const colorPalettes: ColorPalette[] = [
     category: "traditional",
     colors: {
       primary: "#606C38",
+      text: "#525E30",
       secondary: "#283618",
       accent: "#DDA15E",
       background: "#FEFAE0",
-      text: "#283618",
     },
   },
-  // Adding more palettes to ensure scrolling is necessary
   {
     id: "vibrant-primary",
     name: "Vibrant Primary",
@@ -162,10 +179,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "vibrant",
     colors: {
       primary: "#E63946",
+      text: "#CC323E",
       secondary: "#457B9D",
       accent: "#F1FAEE",
       background: "#FFFFFF",
-      text: "#1D3557",
     },
   },
   {
@@ -175,10 +192,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "modern",
     colors: {
       primary: "#2B2D42",
+      text: "#26283A",
       secondary: "#8D99AE",
       accent: "#EF233C",
       background: "#EDF2F4",
-      text: "#2B2D42",
     },
   },
   {
@@ -188,10 +205,10 @@ export const colorPalettes: ColorPalette[] = [
     category: "elementary",
     colors: {
       primary: "#FFBE0B",
+      text: "#E6A909",
       secondary: "#FB5607",
       accent: "#FF006E",
       background: "#FFFFFF",
-      text: "#8338EC",
     },
   },
   {
@@ -201,48 +218,55 @@ export const colorPalettes: ColorPalette[] = [
     category: "university",
     colors: {
       primary: "#3D5A80",
+      text: "#344C6D",
       secondary: "#98C1D9",
       accent: "#EE6C4D",
       background: "#F7FFF7",
-      text: "#293241",
     },
   },
-]
+];
 
 interface ColorPalettePickerProps {
   value: {
-    primary: string
-    secondary: string
-    accent: string
-    background: string
-    text: string
-  }
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text: string;
+  };
   onChange: (colors: {
-    primary: string
-    secondary: string
-    accent: string
-    background: string
-    text: string
-  }) => void
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text: string;
+  }) => void;
 }
 
-export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps) {
-  const [activeTab, setActiveTab] = useState<string>("all")
-  const [isOpen, setIsOpen] = useState(false)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+export function ColorPalettePicker({
+  value,
+  onChange,
+}: ColorPalettePickerProps) {
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [isOpen, setIsOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Filter palettes based on active tab
   const filteredPalettes =
-    activeTab === "all" ? colorPalettes : colorPalettes.filter((palette) => palette.category === activeTab)
+    activeTab === "all"
+      ? colorPalettes
+      : colorPalettes.filter((palette) => palette.category === activeTab);
 
   const handlePaletteSelect = (colors: ColorPalette["colors"]) => {
-    onChange(colors)
-  }
+    onChange(colors);
+  };
 
   const getCurrentPaletteName = () => {
-    const currentPalette = colorPalettes.find((palette) => JSON.stringify(palette.colors) === JSON.stringify(value))
-    return currentPalette ? currentPalette.name : "Custom"
-  }
+    const currentPalette = colorPalettes.find(
+      (palette) => JSON.stringify(palette.colors) === JSON.stringify(value)
+    );
+    return currentPalette ? currentPalette.name : "Custom";
+  };
 
   return (
     <div className="space-y-4">
@@ -251,12 +275,26 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
           <h3 className="text-sm font-medium">Color Palette</h3>
           <HelpTooltip content="Choose a color palette that matches your school's identity" />
         </div>
-        <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => setIsOpen(true)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-2"
+          onClick={() => setIsOpen(true)}
+        >
           <span className="text-xs">{getCurrentPaletteName()}</span>
           <div className="flex gap-1">
-            <div className="h-3 w-3 rounded-full border" style={{ backgroundColor: value.primary }} />
-            <div className="h-3 w-3 rounded-full border" style={{ backgroundColor: value.secondary }} />
-            <div className="h-3 w-3 rounded-full border" style={{ backgroundColor: value.accent }} />
+            <div
+              className="h-3 w-3 rounded-full border"
+              style={{ backgroundColor: value.primary }}
+            />
+            <div
+              className="h-3 w-3 rounded-full border"
+              style={{ backgroundColor: value.secondary }}
+            />
+            <div
+              className="h-3 w-3 rounded-full border"
+              style={{ backgroundColor: value.accent }}
+            />
           </div>
         </Button>
       </div>
@@ -271,7 +309,9 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
                     className="h-8 w-8 rounded-full border-2 border-white shadow-sm cursor-pointer"
                     style={{ backgroundColor: color }}
                   />
-                  <span className="text-xs mt-1 capitalize">{key.slice(0, 1)}</span>
+                  <span className="text-xs mt-1 capitalize">
+                    {key.slice(0, 1)}
+                  </span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -288,10 +328,17 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Choose Color Palette</DialogTitle>
-            <DialogDescription>Select a color palette that matches your school's identity</DialogDescription>
+            <DialogDescription>
+              Select a color palette that matches your school's identity
+            </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mt-2">
+          <Tabs
+            defaultValue="all"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="mt-2"
+          >
             <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="all" className="text-xs">
                 All
@@ -308,31 +355,49 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
             </TabsList>
 
             <div className="relative">
-              <TabsContent value={activeTab} className="mt-0 pt-0 data-[state=active]:block" forceMount>
-                <div ref={scrollContainerRef} className="h-[300px] overflow-y-auto space-y-3 pr-2">
+              <TabsContent
+                value={activeTab}
+                className="mt-0 pt-0 data-[state=active]:block"
+                forceMount
+              >
+                <div
+                  ref={scrollContainerRef}
+                  className="h-[300px] overflow-y-auto space-y-3 pr-2"
+                >
                   {filteredPalettes.map((palette) => {
-                    const isSelected = JSON.stringify(value) === JSON.stringify(palette.colors)
+                    const isSelected =
+                      JSON.stringify(value) === JSON.stringify(palette.colors);
 
                     return (
                       <div
                         key={palette.id}
                         className={`p-3 rounded-md border cursor-pointer transition-all hover:border-primary ${
-                          isSelected ? "ring-2 ring-primary bg-primary/5" : "hover:bg-accent/50"
+                          isSelected
+                            ? "ring-2 ring-primary bg-primary/5"
+                            : "hover:bg-accent/50"
                         }`}
                         onClick={() => handlePaletteSelect(palette.colors)}
                       >
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">{palette.name}</span>
-                          {isSelected && <Check className="h-4 w-4 text-primary" />}
+                          <span className="text-sm font-medium">
+                            {palette.name}
+                          </span>
+                          {isSelected && (
+                            <Check className="h-4 w-4 text-primary" />
+                          )}
                         </div>
-                        <div className="text-xs text-muted-foreground mb-3">{palette.description}</div>
+                        <div className="text-xs text-muted-foreground mb-3">
+                          {palette.description}
+                        </div>
                         <div className="flex gap-1">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div
                                   className="h-6 w-6 rounded-full border-2 border-white shadow-sm"
-                                  style={{ backgroundColor: palette.colors.primary }}
+                                  style={{
+                                    backgroundColor: palette.colors.primary,
+                                  }}
                                 />
                               </TooltipTrigger>
                               <TooltipContent>Primary</TooltipContent>
@@ -343,7 +408,9 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
                               <TooltipTrigger asChild>
                                 <div
                                   className="h-6 w-6 rounded-full border-2 border-white shadow-sm"
-                                  style={{ backgroundColor: palette.colors.secondary }}
+                                  style={{
+                                    backgroundColor: palette.colors.secondary,
+                                  }}
                                 />
                               </TooltipTrigger>
                               <TooltipContent>Secondary</TooltipContent>
@@ -354,7 +421,9 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
                               <TooltipTrigger asChild>
                                 <div
                                   className="h-6 w-6 rounded-full border-2 border-white shadow-sm"
-                                  style={{ backgroundColor: palette.colors.accent }}
+                                  style={{
+                                    backgroundColor: palette.colors.accent,
+                                  }}
                                 />
                               </TooltipTrigger>
                               <TooltipContent>Accent</TooltipContent>
@@ -365,7 +434,9 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
                               <TooltipTrigger asChild>
                                 <div
                                   className="h-6 w-6 rounded-full border-2 border-white shadow-sm"
-                                  style={{ backgroundColor: palette.colors.background }}
+                                  style={{
+                                    backgroundColor: palette.colors.background,
+                                  }}
                                 />
                               </TooltipTrigger>
                               <TooltipContent>Background</TooltipContent>
@@ -376,7 +447,9 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
                               <TooltipTrigger asChild>
                                 <div
                                   className="h-6 w-6 rounded-full border-2 border-white shadow-sm"
-                                  style={{ backgroundColor: palette.colors.text }}
+                                  style={{
+                                    backgroundColor: palette.colors.text,
+                                  }}
                                 />
                               </TooltipTrigger>
                               <TooltipContent>Text</TooltipContent>
@@ -384,7 +457,7 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
                           </TooltipProvider>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </TabsContent>
@@ -397,5 +470,5 @@ export function ColorPalettePicker({ value, onChange }: ColorPalettePickerProps)
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

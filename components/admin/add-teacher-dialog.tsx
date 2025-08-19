@@ -1,72 +1,100 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AddTeacherDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onAdd: (teacher: { name: string; email: string; department: string }) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (teacher: {
+    fullName: string;
+    email: string;
+    password: string;
+  }) => void;
 }
 
-export function AddTeacherDialog({ isOpen, onClose, onAdd }: AddTeacherDialogProps) {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [department, setDepartment] = useState("")
-  const [errors, setErrors] = useState<{ name?: string; email?: string; department?: string }>({})
+export function AddTeacherDialog({
+  isOpen,
+  onClose,
+  onAdd,
+}: AddTeacherDialogProps) {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    email?: string;
+    password?: string;
+  }>({});
 
   const validateForm = () => {
-    const newErrors: { name?: string; email?: string; department?: string } = {}
-    let isValid = true
+    const newErrors: { fullName?: string; email?: string; password?: string } =
+      {};
+    let isValid = true;
 
-    if (!name.trim()) {
-      newErrors.name = "Name is required"
-      isValid = false
+    if (!fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+      isValid = false;
     }
 
     if (!email.trim()) {
-      newErrors.email = "Email is required"
-      isValid = false
+      newErrors.email = "Email is required";
+      isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email is invalid"
-      isValid = false
+      newErrors.email = "Email is invalid";
+      isValid = false;
     }
 
-    if (!department) {
-      newErrors.department = "Department is required"
-      isValid = false
+    if (!password.trim()) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+      isValid = false;
     }
 
-    setErrors(newErrors)
-    return isValid
-  }
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (validateForm()) {
-      onAdd({ name, email, department })
-      resetForm()
+      onAdd({ fullName, email, password });
+      resetForm();
     }
-  }
+  };
 
   const resetForm = () => {
-    setName("")
-    setEmail("")
-    setDepartment("")
-    setErrors({})
-  }
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setErrors({});
+  };
 
   const handleClose = () => {
-    resetForm()
-    onClose()
-  }
+    resetForm();
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -77,14 +105,17 @@ export function AddTeacherDialog({ isOpen, onClose, onAdd }: AddTeacherDialogPro
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="fullName">Full Name</Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={errors.name ? "border-red-500" : ""}
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className={errors.fullName ? "border-red-500" : ""}
+                placeholder="Enter teacher's full name"
               />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+              {errors.fullName && (
+                <p className="text-red-500 text-sm">{errors.fullName}</p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
@@ -94,28 +125,25 @@ export function AddTeacherDialog({ isOpen, onClose, onAdd }: AddTeacherDialogPro
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={errors.email ? "border-red-500" : ""}
+                placeholder="Enter teacher's email"
               />
-              {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-red-500 text-sm">{errors.email}</p>
+              )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="department">Department</Label>
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger id="department" className={errors.department ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Science">Science</SelectItem>
-                  <SelectItem value="Mathematics">Mathematics</SelectItem>
-                  <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="History">History</SelectItem>
-                  <SelectItem value="Art">Art</SelectItem>
-                  <SelectItem value="Music">Music</SelectItem>
-                  <SelectItem value="Physical Education">Physical Education</SelectItem>
-                  <SelectItem value="Computer Science">Computer Science</SelectItem>
-                  <SelectItem value="Foreign Languages">Foreign Languages</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.department && <p className="text-red-500 text-sm">{errors.department}</p>}
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={errors.password ? "border-red-500" : ""}
+                placeholder="Enter initial password"
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm">{errors.password}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -127,5 +155,5 @@ export function AddTeacherDialog({ isOpen, onClose, onAdd }: AddTeacherDialogPro
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

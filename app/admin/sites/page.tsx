@@ -161,7 +161,10 @@ export default function SitesPage() {
                       Edit
                     </Button>
                   </Link>
-                  <Link href={`/preview/${site._id}/home`} className="flex-1">
+                  <Link
+                    href={`/preview/${site._id}`}
+                    className="flex-1"
+                  >
                     <Button size="sm" className="w-full">
                       <Eye className="mr-2 h-4 w-4" />
                       Preview
@@ -232,7 +235,7 @@ export default function SitesPage() {
                         Edit
                       </Button>
                     </Link>
-                    <Link href={`/preview/${site._id}/home`} className="flex-1">
+                    <Link href={`/preview/${site._id}`} className="flex-1">
                       <Button size="sm" className="w-full">
                         <Eye className="mr-2 h-4 w-4" />
                         Preview
@@ -305,7 +308,7 @@ export default function SitesPage() {
                         Edit
                       </Button>
                     </Link>
-                    <Link href={`/preview/${site._id}/home`} className="flex-1">
+                    <Link href={`/preview/${site._id}`} className="flex-1">
                       <Button size="sm" className="w-full">
                         <Eye className="mr-2 h-4 w-4" />
                         Preview
