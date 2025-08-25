@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { ReactNode, use } from "react";
+import { ReactNode, use, useMemo } from "react";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -171,7 +171,30 @@ export default function EditorPage({
       });
     }
   }, [token, user]);
-
+  const selectPagesData = useMemo(() => {
+    return sitePages?.concat([
+      {
+        _id: "signup",
+        title: "Sign Up",
+        slug: "signup",
+        site_id: "",
+        is_homepage: false,
+        order_index: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      {
+        _id: "signin",
+        title: "Sign In",
+        slug: "signin",
+        site_id: "",
+        is_homepage: false,
+        order_index: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    ]);
+  }, [sitePages]);
   const textColor = selectedSite?.settings?.colors?.text;
   const primaryColor = selectedSite?.settings?.colors?.primary;
   const coursesList = courses?.courses || [];
@@ -726,6 +749,12 @@ export default function EditorPage({
       getSiteById(id);
     }
   }, []);
+  useEffect(() => {
+    if (selectedSite && sitePages) {
+      setCurrentPage(sitePages[0]);
+      setPageTitle(sitePages[0]?.title);
+    }
+  }, [selectedSite, sitePages]);
 
   // Store page content for each page separately
   const [pagesContent, setPagesContent] = useState<Record<string, any[]>>({});
@@ -1364,56 +1393,56 @@ export default function EditorPage({
     // Create a new array with the element moved
   };
 
-  const handleSave = async () => {
-    if (!pageId) {
-      console.log("No page selected");
-      addToast({
-        title: "Error",
-        description: "No page selected",
-        variant: "destructive",
-      });
-      return;
-    }
+  // const handleSave = async () => {
+  //   if (!pageId) {
+  //     console.log("No page selected");
+  //     addToast({
+  //       title: "Error",
+  //       description: "No page selected",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
 
-    setIsSaving(true);
+  //   setIsSaving(true);
 
-    try {
-      // Save the current page data
-      await updatePageData(pageId, {
-        title: pageTitle,
-        slug: pageTitle.toLowerCase().replace(/\s+/g, "-"),
-        is_homepage: pageTitle.toLowerCase() === "home",
-      });
+  //   try {
+  //     // Save the current page data
+  //     await updatePageData(pageId, {
+  //       title: pageTitle,
+  //       slug: pageTitle.toLowerCase().replace(/\s+/g, "-"),
+  //       is_homepage: pageTitle.toLowerCase() === "home",
+  //     });
 
-      // Save all sections for the current page
-      for (const section of pageSections) {
-        await createNewSection({
-          page_id: pageId,
-          type: section.type,
-          label: section.label,
-          order_index: pageSections.indexOf(section),
-          content: section.content,
-        });
-      }
+  //     // Save all sections for the current page
+  //     for (const section of pageSections) {
+  //       await createNewSection({
+  //         page_id: pageId,
+  //         type: section.type,
+  //         label: section.label,
+  //         order_index: pageSections.indexOf(section),
+  //         content: section.content,
+  //       });
+  //     }
 
-      // Show success message
-      setShowSaveDialog(true);
+  //     // Show success message
+  //     setShowSaveDialog(true);
 
-      // If tutorial is active and this is the first save, advance to next step
-      if (showTutorial && tutorialStep === 3) {
-        setTutorialStep(4);
-      }
-    } catch (error) {
-      console.error("Error saving site:", error);
-      addToast({
-        title: "Error saving site",
-        description: "An unexpected error occurred while saving your site.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  //     // If tutorial is active and this is the first save, advance to next step
+  //     if (showTutorial && tutorialStep === 3) {
+  //       setTutorialStep(4);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error saving site:", error);
+  //     addToast({
+  //       title: "Error saving site",
+  //       description: "An unexpected error occurred while saving your site.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsSaving(false);
+  //   }
+  // };
 
   const handleSiteSettingsUpdate = async (newSettings: any) => {
     try {
@@ -1773,7 +1802,7 @@ export default function EditorPage({
           </Link>
           <div className="h-6 w-px bg-border" />
           <Link
-            href="/dashboard/sites"
+            href="/admin/sites"
             className="flex items-center text-sm text-muted-foreground"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -1781,7 +1810,7 @@ export default function EditorPage({
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          <TooltipProvider>
+          {/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -1797,7 +1826,7 @@ export default function EditorPage({
                 <p>Get help with using the editor</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
+          </TooltipProvider> */}
 
           <TooltipProvider>
             <Tooltip>
@@ -1821,7 +1850,7 @@ export default function EditorPage({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
+                  // variant="outline"
                   size="sm"
                   onClick={handlePreviewClick}
                 >
@@ -1835,7 +1864,7 @@ export default function EditorPage({
             </Tooltip>
           </TooltipProvider>
 
-          <TooltipProvider>
+          {/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button size="sm" onClick={handleSave} disabled={isSaving}>
@@ -1856,7 +1885,7 @@ export default function EditorPage({
                 <p>Save your changes</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
+          </TooltipProvider> */}
         </div>
       </header>
 
@@ -3819,14 +3848,14 @@ export default function EditorPage({
                               return;
                             }
 
-                            const selectedPage = sitePages?.find(
+                            const selectedPage = selectPagesData?.find(
                               (page) => page._id === value
                             );
 
                             if (selectedPage) {
                               handleContentChange("ctaLink", {
                                 pageId: value,
-                                link: `/page/${
+                                link: `/${
                                   selectedPage.slug || selectedPage._id
                                 }`,
                               });
@@ -3838,7 +3867,7 @@ export default function EditorPage({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="home">No page (Home)</SelectItem>
-                            {sitePages?.map((page: any) => (
+                            {selectPagesData?.map((page: any) => (
                               <SelectItem key={page._id} value={page._id}>
                                 {page.title ||
                                   page.name ||
@@ -4995,6 +5024,15 @@ export default function EditorPage({
                           value={tempContent?.buttonLink?.pageId || ""}
                           onValueChange={(value) => {
                             handleContentChange("buttonLink.pageId", value);
+                            const selectedPage = selectPagesData?.find(
+                              (page) => page._id === value
+                            );
+                            handleContentChange(
+                              "buttonLink.link",
+                              `/${
+                                selectedPage?.slug || selectedPage?._id || ""
+                              }`
+                            );
                           }}
                         >
                           <SelectTrigger>
@@ -5002,7 +5040,7 @@ export default function EditorPage({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="home">No page (Home)</SelectItem>
-                            {sitePages?.map((page: any) => (
+                            {selectPagesData?.map((page: any) => (
                               <SelectItem key={page._id} value={page._id}>
                                 {page.title ||
                                   page.name ||
@@ -5345,7 +5383,7 @@ export default function EditorPage({
                           <Select
                             value={tempContent?.showAllButton?.pageId || ""}
                             onValueChange={(value) => {
-                              const selectedPage = sitePages.find(
+                              const selectedPage = selectPagesData.find(
                                 (page) => page._id === value
                               );
                               handleContentChange(
@@ -5362,7 +5400,7 @@ export default function EditorPage({
                               <SelectValue placeholder="Select a page to redirect to" />
                             </SelectTrigger>
                             <SelectContent>
-                              {sitePages.map((page: any) => (
+                              {selectPagesData.map((page: any) => (
                                 <SelectItem key={page._id} value={page._id}>
                                   {page.title}
                                 </SelectItem>
@@ -5805,9 +5843,17 @@ export default function EditorPage({
                                               const newButtons = [
                                                 ...(item.buttons || []),
                                               ];
+                                              const selectedPage =
+                                                selectPagesData?.find(
+                                                  (p: any) => p._id === value
+                                                );
                                               newButtons[btnIndex] = {
                                                 ...button,
                                                 pageId: value,
+                                                link:
+                                                  value === "home"
+                                                    ? ""
+                                                    : `/${selectedPage?.slug}`,
                                               };
                                               newItems[index] = {
                                                 ...item,
@@ -5827,18 +5873,20 @@ export default function EditorPage({
                                               <SelectItem value="home">
                                                 No page (Home)
                                               </SelectItem>
-                                              {sitePages?.map((page: any) => (
-                                                <SelectItem
-                                                  key={page._id}
-                                                  value={page._id}
-                                                >
-                                                  {page.title ||
-                                                    page.name ||
-                                                    `Page ${page._id.slice(
-                                                      -6
-                                                    )}`}
-                                                </SelectItem>
-                                              ))}
+                                              {selectPagesData.map(
+                                                (page: any) => (
+                                                  <SelectItem
+                                                    key={page._id}
+                                                    value={page._id}
+                                                  >
+                                                    {page.title ||
+                                                      page.name ||
+                                                      `Page ${page._id.slice(
+                                                        -6
+                                                      )}`}
+                                                  </SelectItem>
+                                                )
+                                              )}
                                             </SelectContent>
                                           </Select>
                                           <Button
