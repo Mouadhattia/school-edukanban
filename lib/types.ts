@@ -64,6 +64,7 @@ export interface User {
   schoolIds: string[];
   password?: string;
   schoolId?: string;
+  userId?: string;
 }
 
 // Update the Board interface to include classId (singular) and templateId
@@ -600,6 +601,7 @@ export interface GetUsersPayload {
   limit?: number;
   search?: string;
   role?: UserRole;
+  schoolId?: string;
 }
 // classRoom
 export interface Classroom {
@@ -612,6 +614,7 @@ export interface Classroom {
   updatedAt: string;
   levelId: string | Level;
   studyPeriod: string | StudyPeriod;
+  courses?: Course[];
 }
 // GetClassesPayload
 export interface GetClassesPayload {
@@ -720,4 +723,72 @@ export interface Course {
   video: string;
   createdAt: string;
   updatedAt: string;
+  syllabus?: string;
+}
+// types/board.ts
+export type BoardRole = "owner" | "admin" | "member" | "observer";
+
+export interface BoardMember {
+  userId: string; // references User _id
+  role: BoardRole;
+  joinedAt?: string; // ISO date string
+}
+
+export interface Board {
+  _id: string;
+  title: string;
+  descriptions: string;
+  backgroundColor: string;
+  createdBy: string | User; // references User _id
+  members: BoardMember[];
+  archived: boolean;
+  createdAt: Date; // from timestamps: true
+  updatedAt?: Date;
+  lists: List[];
+}
+// types/card.ts
+export interface Card {
+  _id: string;
+  title: string;
+  cardParent?: string; // references another Card
+  listId?: string; // references List
+  boardId: string; // references Board
+  assignedTo?: string; // references User
+  position?: number;
+  borderColor?: string;
+  createdBy?: string; // references User
+  archived: boolean;
+  activityId?: string; // references another Card
+  createdAt: string; // from timestamps
+  updatedAt: string;
+}
+// types/list.ts
+export interface List {
+  _id: string;
+  title: string;
+  boardId: string; // references Board
+  position: number;
+  color: string;
+  archived: boolean;
+  createdBy: string; // references User
+  createdAt: string; // from timestamps
+  updatedAt: string;
+  cards: Card[];
+}
+
+export interface Order {
+  _id: string;
+  userId: string | User;
+  courseId?: string | Course;
+  curriculumProductId?: any;
+  status: string;
+  amount: number;
+  paymentMethod: "cash" | "bank_transfer" | "card";
+  paymentStatus: "pending" | "paid" | "failed";
+  paymentDate: Date;
+  paymentGateway: "stripe" | "paypal" | "razorpay";
+  paymentGatewayId: string;
+  paymentGatewayStatus: "pending" | "paid" | "failed";
+  createdAt: Date;
+  updatedAt: Date;
 }

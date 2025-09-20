@@ -78,6 +78,7 @@ export function TeachersList() {
           limit: itemsPerPage,
           search: searchQuery,
           role: "teacher",
+          schoolId: schoolId,
         },
         token
       );
@@ -130,7 +131,8 @@ export function TeachersList() {
             limit: itemsPerPage,
             search: searchQuery,
             role: "teacher",
-          },
+            schoolId: schoolId,
+            },
           token
         );
       }
