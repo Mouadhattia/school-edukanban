@@ -210,6 +210,12 @@ export function ClassManagement() {
                           View Boards
                         </a>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <a href={`/admin/classes/${cls._id}/courses`}>
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          View Courses
+                        </a>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"

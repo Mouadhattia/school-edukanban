@@ -9,7 +9,6 @@ import {
   getOrganizationMembers,
   getOrganizationActivity,
   getUserById,
-  getBoardById,
 } from "@/lib/data";
 import type {
   Template,
@@ -33,6 +32,9 @@ import type {
   StudyPeriod,
   FullClassRoomCreationData,
   Course,
+  List,
+  Card,
+  Order,
 } from "@/lib/types";
 
 // Configuration flag to switch between mock and real API
@@ -203,34 +205,6 @@ export async function fetchSharedBoards(schoolId: string): Promise<Board[]> {
   }
 
   return apiRequest<Board[]>(`/schools/${schoolId}/shared-boards`);
-}
-
-export async function fetchBoardById(boardId: string): Promise<Board | null> {
-  if (USE_MOCK_DATA) {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return getBoardById(boardId);
-  }
-
-  return apiRequest<Board | null>(`/boards/${boardId}`);
-}
-
-export async function createBoard(board: Partial<Board>): Promise<Board> {
-  if (USE_MOCK_DATA) {
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    // In a real implementation, this would add to the mock data
-    const newBoard = {
-      ...board,
-      id: `board-${Date.now()}`,
-      createdAt: new Date(),
-    } as Board;
-
-    return newBoard;
-  }
-
-  return apiRequest<Board>("/boards", {
-    method: "POST",
-    body: JSON.stringify(board),
-  });
 }
 
 // Student APIs
@@ -827,6 +801,7 @@ export async function deleteUser(
 
 export async function getUsers(
   payload: GetUsersPayload,
+
   token: string
 ): Promise<UsersData | null> {
   return apiRequest<
@@ -838,7 +813,7 @@ export async function getUsers(
         totalUsers: 0;
       }
   >(
-    `/admin/users?page=${payload.page}&&limit=${payload.limit}&&role=${payload.role}&&search=${payload.search}`,
+    `/admin/users?page=${payload.page}&&limit=${payload.limit}&&role=${payload.role}&&search=${payload.search}&&schoolId=${payload.schoolId}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -853,11 +828,14 @@ export async function getClasses(
   payload: GetClassesPayload,
   token: string
 ): Promise<ClassesData | null> {
-  return apiRequest<ClassesData | null>(`/school/classrooms`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  return apiRequest<ClassesData | null>(
+    `/school/classrooms?schoolId=${payload.schoolId}&fromDate=${payload.fromDate}&toDate=${payload.toDate}&&page=${payload.page}&&limit=${payload.limit}&&search=${payload.search}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 }
 
 // getClassesById
@@ -1367,6 +1345,36 @@ export async function getAllCourses(
     headers: headers ? headers : undefined,
   });
 }
+//
+export async function assignCoursesToClassroom(
+  courseId: string,
+  classroomId: string,
+  token: string
+): Promise<void> {
+  return apiRequest<void>(`/school/classrooms/assign-course`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ courseId, classroomId }),
+  });
+}
+
+export async function unassignCoursesFromClassroom(
+  courseId: string,
+  classroomId: string,
+  token: string
+): Promise<void> {
+  return apiRequest<void>(`/school/classrooms/remove-course`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ courseId, classroomId }),
+  });
+}
 
 //  upload image
 export async function uploadImage(
@@ -1387,4 +1395,204 @@ export async function uploadImage(
       body: formData,
     }
   );
+}
+// board
+export async function createBoard(
+  board: Partial<Board>,
+  token: string
+): Promise<Board> {
+  return apiRequest<Board>("/board", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+    body: JSON.stringify(board),
+  });
+}
+
+export async function getBoardById(id: string, token: string): Promise<Board> {
+  return apiRequest<Board>(`/board/${id}`, {
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
+}
+
+export async function updateBoard(
+  id: string,
+  board: Partial<Board>,
+  token: string
+): Promise<Board> {
+  return apiRequest<Board>(`/board/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+    body: JSON.stringify(board),
+  });
+}
+
+export async function deleteBoard(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/board/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
+}
+
+export async function getAllBoards(token: string): Promise<Board[]> {
+  return apiRequest<Board[]>(`/board`, {
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
+}
+
+// list
+export async function createList(
+  list: Partial<List>,
+  token: string
+): Promise<List> {
+  return apiRequest<List>("/board/list", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+    body: JSON.stringify(list),
+  });
+}
+
+//  update list
+export async function updateList(
+  id: string,
+  list: Partial<List>,
+  token: string
+) {
+  return apiRequest<List>(`/board/list/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+    body: JSON.stringify(list),
+  });
+}
+
+// delete list
+export async function deleteList(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/board/list/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
+}
+
+// router.post("/card", verifyToken, createCard);
+// router.put("/card/:cardId", verifyToken, updateCard);
+// router.delete("/card/:cardId", verifyToken, deleteCard);
+// router.put("/move-card/:cardId", verifyToken, moveCard);
+
+// create card
+export async function createCard(
+  card: Partial<Card>,
+  token: string
+): Promise<Card> {
+  return apiRequest<Card>("/board/card", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+    body: JSON.stringify(card),
+  });
+}
+
+// update card
+export async function updateCard(
+  id: string,
+  card: Partial<Card>,
+  token: string
+): Promise<Card> {
+  return apiRequest<Card>(`/board/card/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+    body: JSON.stringify(card),
+  });
+}
+
+// delete card
+export async function deleteCard(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/board/card/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
+}
+
+// move card
+export async function moveCard(
+  id: string,
+  indexInList: number,
+  newListId: string,
+  token: string
+): Promise<void> {
+  console.log(id, indexInList, newListId, "api");
+  return apiRequest<void>(`/board/move-card/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ indexInList, newListId }),
+  });
+}
+///board/generate-board-for-unit/
+export async function generateBoardForUnit(
+  unitId: string,
+  token: string
+): Promise<void> {
+  return apiRequest<void>(`/board/generate-board-for-unit/${unitId}`, {
+    headers: { Authorization: `${token}`, "Content-Type": "application/json" },
+    method: "GET",
+  });
+}
+//orders
+// orders APIs
+export async function getOrders(
+  token: string,
+  page: number = 1,
+  limit: number = 10,
+  userId?: string
+): Promise<{
+  orders: Order[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  return apiRequest<{
+    orders: Order[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/order/user/${userId}?page=${page}&limit=${limit}`, {
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
+}
+export async function getOrderById(id: string, token: string): Promise<Order> {
+  return apiRequest<Order>(`/order/orders/${id}`, {
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
 }

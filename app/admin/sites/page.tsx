@@ -70,6 +70,7 @@ export default function SitesPage() {
 
     return `${year}-${month}-${day}`;
   }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -86,172 +87,27 @@ export default function SitesPage() {
           </Link>
         </Button>
       </div>
+      {(!sites || sites.length === 0) && <div>No sites found</div>}
+      {sites && sites.length > 0 && (
+        <Tabs defaultValue="all" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="all" onClick={() => setStatus("all")}>
+              All Sites
+            </TabsTrigger>
+            <TabsTrigger
+              value="published"
+              onClick={() => setStatus("published")}
+            >
+              Published
+            </TabsTrigger>
+            <TabsTrigger value="draft" onClick={() => setStatus("draft")}>
+              Draft
+            </TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all" onClick={() => setStatus("all")}>
-            All Sites
-          </TabsTrigger>
-          <TabsTrigger value="published" onClick={() => setStatus("published")}>
-            Published
-          </TabsTrigger>
-          <TabsTrigger value="draft" onClick={() => setStatus("draft")}>
-            Draft
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sites.map((site) => (
-              <Card key={site._id} className="overflow-hidden">
-                <div className="aspect-video relative">
-                  <img
-                    src={
-                      "https://images-platform.99static.com//pIbvuLLaXZvvayBCdrGDahz08ps=/4x0:1363x1359/fit-in/500x500/99designs-contests-attachments/56/56251/attachment_56251104"
-                    }
-                    alt={site.name}
-                    className="object-cover w-full h-full"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Analytics</DropdownMenuItem>
-                        <DropdownMenuItem>Edit Settings</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          Delete Site
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-                <CardHeader>
-                  <CardTitle>{site.name}</CardTitle>
-                  <CardDescription>{site.domain}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm">
-                    <div
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        site.status === "published"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {site.status}
-                    </div>
-                    <span className="text-muted-foreground">
-                      Updated {formatDate(site.last_updated)}
-                    </span>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-0 flex gap-2">
-                  <Link
-                    href={`/admin/sites/${site._id}/editor`}
-                    className="flex-1"
-                  >
-                    <Button variant="outline" size="sm" className="w-full">
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </Link>
-                  <Link
-                    href={`/preview/${site._id}`}
-                    className="flex-1"
-                  >
-                    <Button size="sm" className="w-full">
-                      <Eye className="mr-2 h-4 w-4" />
-                      Preview
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="published" className="space-y-4">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sites
-              .filter((site) => site.status === "published")
-              .map((site) => (
-                <Card key={site._id} className="overflow-hidden">
-                  <div className="aspect-video relative">
-                    <img
-                      src="https://images-platform.99static.com//pIbvuLLaXZvvayBCdrGDahz08ps=/4x0:1363x1359/fit-in/500x500/99designs-contests-attachments/56/56251/attachment_56251104"
-                      alt={site.name}
-                      className="object-cover w-full h-full"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>View Analytics</DropdownMenuItem>
-                          <DropdownMenuItem>Edit Settings</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            Delete Site
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                  <CardHeader>
-                    <CardTitle>{site.name}</CardTitle>
-                    <CardDescription>{site.domain}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">
-                        {site.status}
-                      </div>
-                      <span className="text-muted-foreground">
-                        Updated {formatDate(site.updated_at)}
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0 flex gap-2">
-                    <Link
-                      href={`/admin/sites/${site._id}/editor`}
-                      className="flex-1"
-                    >
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </Button>
-                    </Link>
-                    <Link href={`/preview/${site._id}`} className="flex-1">
-                      <Button size="sm" className="w-full">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Preview
-                      </Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="draft" className="space-y-4">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sites
-              .filter((site) => site.status === "draft")
-              .map((site) => (
+          <TabsContent value="all" className="space-y-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {sites?.map((site) => (
                 <Card key={site._id} className="overflow-hidden">
                   <div className="aspect-video relative">
                     <img
@@ -290,11 +146,17 @@ export default function SitesPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between text-sm">
-                      <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <div
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          site.status === "published"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
                         {site.status}
                       </div>
                       <span className="text-muted-foreground">
-                        Updated {formatDate(site.updated_at)}
+                        Updated {formatDate(site.last_updated)}
                       </span>
                     </div>
                   </CardContent>
@@ -317,9 +179,154 @@ export default function SitesPage() {
                   </CardFooter>
                 </Card>
               ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="published" className="space-y-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {sites
+                .filter((site) => site.status === "published")
+                .map((site) => (
+                  <Card key={site._id} className="overflow-hidden">
+                    <div className="aspect-video relative">
+                      <img
+                        src="https://images-platform.99static.com//pIbvuLLaXZvvayBCdrGDahz08ps=/4x0:1363x1359/fit-in/500x500/99designs-contests-attachments/56/56251/attachment_56251104"
+                        alt={site.name}
+                        className="object-cover w-full h-full"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>View Analytics</DropdownMenuItem>
+                            <DropdownMenuItem>Edit Settings</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">
+                              Delete Site
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    <CardHeader>
+                      <CardTitle>{site.name}</CardTitle>
+                      <CardDescription>{site.domain}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">
+                          {site.status}
+                        </div>
+                        <span className="text-muted-foreground">
+                          Updated {formatDate(site.updated_at)}
+                        </span>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0 flex gap-2">
+                      <Link
+                        href={`/admin/sites/${site._id}/editor`}
+                        className="flex-1"
+                      >
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                      </Link>
+                      <Link href={`/preview/${site._id}`} className="flex-1">
+                        <Button size="sm" className="w-full">
+                          <Eye className="mr-2 h-4 w-4" />
+                          Preview
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="draft" className="space-y-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {sites
+                .filter((site) => site.status === "draft")
+                .map((site) => (
+                  <Card key={site._id} className="overflow-hidden">
+                    <div className="aspect-video relative">
+                      <img
+                        src={
+                          "https://images-platform.99static.com//pIbvuLLaXZvvayBCdrGDahz08ps=/4x0:1363x1359/fit-in/500x500/99designs-contests-attachments/56/56251/attachment_56251104"
+                        }
+                        alt={site.name}
+                        className="object-cover w-full h-full"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>View Analytics</DropdownMenuItem>
+                            <DropdownMenuItem>Edit Settings</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">
+                              Delete Site
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    <CardHeader>
+                      <CardTitle>{site.name}</CardTitle>
+                      <CardDescription>{site.domain}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
+                          {site.status}
+                        </div>
+                        <span className="text-muted-foreground">
+                          Updated {formatDate(site.updated_at)}
+                        </span>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0 flex gap-2">
+                      <Link
+                        href={`/admin/sites/${site._id}/editor`}
+                        className="flex-1"
+                      >
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                      </Link>
+                      <Link href={`/preview/${site._id}`} className="flex-1">
+                        <Button size="sm" className="w-full">
+                          <Eye className="mr-2 h-4 w-4" />
+                          Preview
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
