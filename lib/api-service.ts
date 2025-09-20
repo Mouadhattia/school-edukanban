@@ -38,7 +38,7 @@ import type {
 // Configuration flag to switch between mock and real API
 const USE_MOCK_DATA = false;
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_URL || "https://api-edukanban.iread.tn/api";
 
 // Helper for API requests
 async function apiRequest<T>(
