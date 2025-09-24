@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,40 +9,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DashboardLayout } from "@/components/dashboard-layout";
 import { Plus, Globe, Edit, Eye } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { useOrganizationData } from "@/contexts/organization-data-context";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Manage your school websites",
-};
 
-// Mock data for demonstration
-const recentSites = [
-  {
-    id: "1",
-    name: "Lincoln Elementary",
-    domain: "lincoln-elementary.edu",
-    status: "published",
-    lastModified: "2 hours ago",
-  },
-  {
-    id: "2",
-    name: "Roosevelt High School",
-    domain: "roosevelt-high.edu",
-    status: "draft",
-    lastModified: "1 day ago",
-  },
-  {
-    id: "3",
-    name: "Washington Middle School",
-    domain: "washington-middle.edu",
-    status: "published",
-    lastModified: "3 days ago",
-  },
-];
+
 
 export default function DashboardPage() {
+  const { sites, fetchSitesData, user ,} = useOrganizationData();
+ 
+  const recentSites = useMemo(() => sites?.map(site=>{
+    return  {
+      id: site._id,
+      name: site.name,
+      domain: site.domain,
+      status: site.status,
+      lastModified: site.last_updated,
+      created_at: site.created_at,
+    }}) || []
+  , [sites]); // dependency array
+  
+const totalSites = recentSites?.length || 0
+const publishedSites = recentSites?.filter(site=>site.status === "published").length || 0
+const draftSites = recentSites?.filter(site=>site.status === "draft").length || 0
+const thisMonthSites = recentSites?.filter(site=>site.created_at >= new Date(new Date().setMonth(new Date().getMonth() - 1))).length || 0
+
+   useEffect(() => {
+     if (user && user.schoolIds) {
+       fetchSitesData({ schoolId: user.schoolIds[0], status, page: 1, limit: 10 ,search: ""});
+     }
+   }, [user, status]);
   return (
     <div>
       <div className="flex items-center justify-between space-y-2">
@@ -68,8 +66,8 @@ export default function DashboardPage() {
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">+1 from last month</p>
+            <div className="text-2xl font-bold">{totalSites}</div>
+            <p className="text-xs text-muted-foreground">+ {thisMonthSites} from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -78,8 +76,8 @@ export default function DashboardPage() {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">67% of total sites</p>
+            <div className="text-2xl font-bold">{publishedSites}</div>
+            <p className="text-xs text-muted-foreground">{publishedSites / totalSites * 100}% of total sites</p>
           </CardContent>
         </Card>
         <Card>
@@ -88,7 +86,7 @@ export default function DashboardPage() {
             <Edit className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">{draftSites}</div>
             <p className="text-xs text-muted-foreground">Ready for review</p>
           </CardContent>
         </Card>
@@ -98,7 +96,7 @@ export default function DashboardPage() {
             <Plus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">{thisMonthSites}</div>
             <p className="text-xs text-muted-foreground">New site created</p>
           </CardContent>
         </Card>
@@ -138,7 +136,7 @@ export default function DashboardPage() {
                       {site.status}
                     </div>
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/sites/${site.id}/editor`}>
+                      <Link href={`/admin/sites/${site.id}/editor`}>
                         Edit
                       </Link>
                     </Button>
@@ -148,7 +146,7 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4">
               <Button variant="outline" className="w-full" asChild>
-                <Link href="/dashboard/sites">View All Sites</Link>
+                <Link href="/admin/sites">View All Sites</Link>
               </Button>
             </div>
           </CardContent>

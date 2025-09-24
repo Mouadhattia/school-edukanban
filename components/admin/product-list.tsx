@@ -28,80 +28,86 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AddCourseDialog } from "@/components/admin/add-course-dialog";
-import { EditCourseDialog } from "@/components/admin/edit-course-dialog";
+import { AddProductDialog } from "@/components/admin/add-product-dialog";
+import { EditProductDialog } from "@/components/admin/edit-product-dialog";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { toast } from "@/lib/toast";
-import type { Course } from "@/lib/types";
+import type { SchoolProduct  as Product} from "@/lib/types";
 
-export const CourseList = () => {
+export const ProductList = () => {
   const {
-    courses,
+    schoolProductsData,
     loading,
-    getAllCourses,
+    getAllSchoolProducts,
     user,
-    createCourse,
-    updateCourse,
-    deleteCourse,
+    createSchoolProduct,
+    updateSchoolProduct,
+    deleteSchoolProduct,
+    getAllCourses,
+    
   } = useOrganizationData();
 
   // use debounce function to debounce the search input
   const useDebounce = (value: string, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
+  
     useEffect(() => {
       const handler = setTimeout(() => setDebouncedValue(value), delay);
       return () => clearTimeout(handler);
     }, [value, delay]);
     return debouncedValue;
   };
-
   const [token, setToken] = useState<string | null>(null);
+    useEffect(() => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        setToken(token);
+      }
+    }, [user]);
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(10);
   const [search, setSearch] = useState<string>("");
   const debouncedSearch = useDebounce(search, 500);
 
   // Dialog states
-  const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
-  const [isEditCourseOpen, setIsEditCourseOpen] = useState(false);
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const schoolId =
     user && user?.schoolIds && user?.schoolIds?.length > 0
       ? user?.schoolIds[0]
       : null;
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setToken(token);
-    }
-  }, [user]);
 
   useEffect(() => {
-    if (token && user && schoolId) {
-      getAllCourses(token, {
+    if ( user && schoolId) {
+      getAllSchoolProducts( {
         schoolId: schoolId,
         search: debouncedSearch,
         page: page,
         limit: limit,
       });
     }
-  }, [debouncedSearch, page, limit, token, user, schoolId]);
+  }, [debouncedSearch, page, limit,  user, schoolId]);
 
-  const coursesList = courses?.courses || [];
-  const totalPages = Math.ceil((courses?.total || 0) / limit);
-  const totalCourses = courses?.total || 0;
+  const productsList = schoolProductsData?.products || [];
+  const totalPages = Math.ceil((schoolProductsData?.total || 0) / limit);
+    const totalProducts = schoolProductsData?.total || 0;
 
-  const handleAddCourse = async (courseData: {
+  const handleAddProduct = async (productData: {
     name: string;
     description: string;
+    price: number;
     duration: number;
     image: string;
     video: string;
+    enableJoinClass: boolean;
   }) => {
-    if (!token || !schoolId) {
+    console.log(schoolId,"schoolId");
+    if (!schoolId) {
+      alert("Authentication token or school ID missing.");
       toast({
         title: "Error",
         description: "Authentication token or school ID missing.",
@@ -111,81 +117,82 @@ export const CourseList = () => {
     }
 
     try {
-      await createCourse(
+      await createSchoolProduct(
         {
-          ...courseData,
+          ...productData,
           school: schoolId,
-        },
-        token
+        }   
+      
       );
 
-      setIsAddCourseOpen(false);
+      setIsAddProductOpen(false);
       toast({
-        title: "Course Added",
-        description: `${courseData.name} has been added successfully.`,
+        title: "Product Added",
+        description: `${productData.name} has been added successfully.`,
       });
     } catch (error) {
-      console.error("Error creating course:", error);
+      console.error("Error creating product:", error);
       toast({
         title: "Error",
-        description: "Failed to add course. Please try again.",
+        description: "Failed to add product. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleEditCourse = async (updatedCourse: {
+  const handleEditProduct = async (updatedProduct: {
     name: string;
     description: string;
     price: number;
     duration: number;
     image: string;
     video: string;
+    enableJoinClass: boolean;
   }) => {
-    if (!token || !selectedCourse) {
+    if (!selectedProduct) {
       toast({
         title: "Error",
-        description: "Authentication token or selected course missing.",
+        description: "Authentication token or selected product missing.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      await updateCourse(selectedCourse._id, updatedCourse, token);
+      await updateSchoolProduct(selectedProduct._id, updatedProduct);
 
-      setIsEditCourseOpen(false);
+      setIsEditProductOpen(false);
       toast({
-        title: "Course Updated",
-        description: `${updatedCourse.name} has been updated successfully.`,
+        title: "Product Updated",
+        description: `${updatedProduct.name} has been updated successfully.`,
       });
     } catch (error) {
-      console.error("Error updating course:", error);
+      console.error("Error updating product:", error);
       toast({
         title: "Error",
-        description: "Failed to update course. Please try again.",
+        description: "Failed to update product. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteCourse = async () => {
-    if (!selectedCourse || !token) return;
+  const handleDeleteProduct = async () => {
+    if (!selectedProduct) return;
 
     try {
-      await deleteCourse(selectedCourse._id, token);
+      await deleteSchoolProduct(selectedProduct._id);
 
       setIsDeleteConfirmOpen(false);
       toast({
-        title: "Course Deleted",
-        description: `${selectedCourse.name} has been permanently deleted.`,
+        title: "Product Deleted",
+        description: `${selectedProduct.name} has been permanently deleted.`,
         variant: "destructive",
       });
     } catch (error) {
-      console.error("Error deleting course:", error);
+        console.error("Error deleting product:", error);
       toast({
         title: "Error",
-        description: "Failed to delete course. Please try again.",
+        description: "Failed to delete product. Please try again.",
         variant: "destructive",
       });
     }
@@ -208,25 +215,34 @@ export const CourseList = () => {
     setPage(1); // Reset to first page when changing items per page
   };
 
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium">Courses</h3>
+          <h3 className="text-lg font-medium">Products</h3>
           <p className="text-sm text-muted-foreground">
-            Manage courses for this school
+            Manage products for this school
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Input
-            placeholder="Search courses..."
+            placeholder="Search products..."
             className="w-64"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Button onClick={() => setIsAddCourseOpen(true)}>
+          <Button onClick={() => {
+            setIsAddProductOpen(true);
+            getAllCourses(token || "", {
+              schoolId: user?.schoolIds?.[0] || "",
+              search: "",
+              page: 1,
+              limit: 100,
+            });
+          }}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Course
+            Add Product
           </Button>
         </div>
       </div>
@@ -237,8 +253,10 @@ export const CourseList = () => {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
-            
+              <TableHead>Price</TableHead>
               <TableHead>Duration (hrs)</TableHead>
+              <TableHead>Join Class</TableHead>
+              <TableHead>Courses</TableHead>
               <TableHead>Created Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -247,33 +265,45 @@ export const CourseList = () => {
             {loading ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={8}
                   className="text-center py-8 text-muted-foreground"
                 >
-                  Loading courses...
+                  Loading products...
                 </TableCell>
               </TableRow>
-            ) : coursesList.length === 0 ? (
+            ) : productsList.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={8}
                   className="text-center py-8 text-muted-foreground"
                 >
-                  No courses found. Try a different search or add a new course.
+                  No products found. Try a different search or add a new product.
                 </TableCell>
               </TableRow>
             ) : (
-              coursesList.map((course) => (
-                <TableRow key={course._id}>
-                  <TableCell className="font-medium">{course.name}</TableCell>
+              productsList.map((product) => (
+                <TableRow key={product._id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell className="max-w-xs truncate">
-                    {course.description || "No description"}
+                    {product.description || "No description"}
                   </TableCell>
-               
-                  <TableCell>{course.duration || 0}</TableCell>
+                  <TableCell>${product.price || 0}</TableCell>
+                  <TableCell>{product.duration || 0}</TableCell>
                   <TableCell>
-                    {course.createdAt
-                      ? new Date(course.createdAt).toLocaleDateString()
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      product.enableJoinClass 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {product.enableJoinClass ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {Array.isArray(product.courses) ? product.courses.length : 0} courses
+                  </TableCell>
+                  <TableCell>
+                    {product.createdAt
+                      ? new Date(product.createdAt).toLocaleDateString()
                       : "N/A"}
                   </TableCell>
                   <TableCell className="text-right">
@@ -287,8 +317,14 @@ export const CourseList = () => {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
                           onClick={() => {
-                            setSelectedCourse(course);
-                            setIsEditCourseOpen(true);
+                            setSelectedProduct(product);
+                            setIsEditProductOpen(true);
+                            getAllCourses(token || "", {
+                              schoolId: user?.schoolIds?.[0] || "",
+                              search: "",
+                              page: 1,
+                              limit: 100,
+                            });
                           }}
                         >
                           Edit
@@ -297,7 +333,7 @@ export const CourseList = () => {
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => {
-                            setSelectedCourse(course);
+                            setSelectedProduct(product);
                             setIsDeleteConfirmOpen(true);
                           }}
                         >
@@ -314,7 +350,7 @@ export const CourseList = () => {
       </div>
 
       {/* Pagination Controls */}
-      {totalCourses > 0 && (
+      {totalProducts > 0 && (
         <div className="mt-4 border-t pt-4">
           <div className="flex items-center justify-between">
             {/* Left side: Items per page and summary */}
@@ -339,8 +375,8 @@ export const CourseList = () => {
               </div>
 
               <div className="text-sm text-muted-foreground">
-                Showing {Math.min((page - 1) * limit + 1, totalCourses)} to{" "}
-                {Math.min(page * limit, totalCourses)} of {totalCourses} courses
+                Showing {Math.min((page - 1) * limit + 1, totalProducts)} to{" "}
+                {Math.min(page * limit, totalProducts)} of {totalProducts} products
               </div>
             </div>
 
@@ -375,25 +411,25 @@ export const CourseList = () => {
       )}
 
       {/* Dialogs */}
-      <AddCourseDialog
-        isOpen={isAddCourseOpen}
-        onClose={() => setIsAddCourseOpen(false)}
-        onAdd={handleAddCourse}
+      <AddProductDialog
+        isOpen={isAddProductOpen}
+        onClose={() => setIsAddProductOpen(false)}
+        onAdd={handleAddProduct}
       />
 
-      <EditCourseDialog
-        isOpen={isEditCourseOpen}
-        onClose={() => setIsEditCourseOpen(false)}
-        onSave={handleEditCourse}
-        course={selectedCourse}
+      <EditProductDialog
+        isOpen={isEditProductOpen}
+        onClose={() => setIsEditProductOpen(false)}
+        onSave={handleEditProduct}
+        product={selectedProduct}
       />
 
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
         onClose={() => setIsDeleteConfirmOpen(false)}
-        onConfirm={handleDeleteCourse}
-        title="Delete Course"
-        description={`Are you sure you want to permanently delete "${selectedCourse?.name}"? This action cannot be undone and will remove all associated data.`}
+        onConfirm={handleDeleteProduct}
+                title="Delete Product"
+        description={`Are you sure you want to permanently delete "${selectedProduct?.name}"? This action cannot be undone and will remove all associated data.`}
         confirmText="Delete"
         variant="destructive"
       />

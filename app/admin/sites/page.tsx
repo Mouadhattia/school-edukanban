@@ -31,7 +31,7 @@ export default function SitesPage() {
 
   useEffect(() => {
     if (user && user.schoolIds) {
-      fetchSitesData({ schoolId: user.schoolIds[0], status });
+      fetchSitesData({ schoolId: user.schoolIds[0], status, page: 1, limit: 10 ,search: ""});
     }
   }, [user, status]);
   // const sites = [

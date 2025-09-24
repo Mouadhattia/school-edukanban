@@ -22,8 +22,9 @@ import type { Site, SiteSettings } from "@/lib/types";
 import { useOrganizationData } from "@/contexts/organization-data-context";
 
 export default function NewSitePage() {
-  const { createNewSite, sites, fetchSitesData, user } = useOrganizationData();
+  const { createNewSite, sites, fetchSitesData, user ,} = useOrganizationData();
 
+  
   const router = useRouter();
   // const searchParams = useSearchParams();
   // const templateId = searchParams.get("template");
@@ -56,10 +57,8 @@ export default function NewSitePage() {
 
         // After creating the site, find it in the updated sites list
 
-        if (!newSite?._id) {
-          throw new Error("Site created but no ID returned");
-        }
-        router.push(`/admin/sites/${newSite._id}/editor`);
+        
+        router.push(`/admin/sites/${newSite?._id}/editor`);
       } else {
         setError("Invalid School");
       }
@@ -106,66 +105,66 @@ export default function NewSitePage() {
     }
   }, [formData.name]);
 
-  const selectedTemplate = [
-    {
-      id: "1",
-      name: "Modern School",
-      category: "high-school",
-      description:
-        "A clean, contemporary design for high schools and academies.",
-      image: "/modern-school-website-template.png",
-      features: [
-        "Homepage with hero banner",
-        "Staff directory",
-        "News section",
-        "Events calendar",
-      ],
-      difficulty: "Easy",
-    },
-    {
-      id: "2",
-      name: "Elementary School",
-      category: "elementary",
-      description:
-        "Colorful and engaging design perfect for elementary schools.",
-      image: "/elementary-school-website.png",
-      features: [
-        "Colorful design",
-        "Class pages",
-        "Parent resources",
-        "Student showcase",
-      ],
-      difficulty: "Easy",
-    },
-    {
-      id: "3",
-      name: "High School Pro",
-      category: "high-school",
-      description: "Professional and academic design for high schools.",
-      image: "/high-school-website-template.png",
-      features: [
-        "Academic program pages",
-        "Athletics section",
-        "College resources",
-        "Staff directory",
-      ],
-      difficulty: "Medium",
-    },
-    {
-      id: "4",
-      name: "University Prep",
-      category: "high-school",
-      description: "Sophisticated design for college preparatory schools.",
-      image: "/university-prep-school-website.png",
-      features: [
-        "College admissions resources",
-        "Advanced course catalog",
-        "Alumni stories",
-        "Campus life",
-      ],
-      difficulty: "Medium",
-    },
-  ];
+  // const selectedTemplate = [
+  //   {
+  //     id: "1",
+  //     name: "Modern School",
+  //     category: "high-school",
+  //     description:
+  //       "A clean, contemporary design for high schools and academies.",
+  //     image: "/modern-school-website-template.png",
+  //     features: [
+  //       "Homepage with hero banner",
+  //       "Staff directory",
+  //       "News section",
+  //       "Events calendar",
+  //     ],
+  //     difficulty: "Easy",
+  //   },
+  //   {
+  //     id: "2",
+  //     name: "Elementary School",
+  //     category: "elementary",
+  //     description:
+  //       "Colorful and engaging design perfect for elementary schools.",
+  //     image: "/elementary-school-website.png",
+  //     features: [
+  //       "Colorful design",
+  //       "Class pages",
+  //       "Parent resources",
+  //       "Student showcase",
+  //     ],
+  //     difficulty: "Easy",
+  //   },
+  //   {
+  //     id: "3",
+  //     name: "High School Pro",
+  //     category: "high-school",
+  //     description: "Professional and academic design for high schools.",
+  //     image: "/high-school-website-template.png",
+  //     features: [
+  //       "Academic program pages",
+  //       "Athletics section",
+  //       "College resources",
+  //       "Staff directory",
+  //     ],
+  //     difficulty: "Medium",
+  //   },
+  //   {
+  //     id: "4",
+  //     name: "University Prep",
+  //     category: "high-school",
+  //     description: "Sophisticated design for college preparatory schools.",
+  //     image: "/university-prep-school-website.png",
+  //     features: [
+  //       "College admissions resources",
+  //       "Advanced course catalog",
+  //       "Alumni stories",
+  //       "Campus life",
+  //     ],
+  //     difficulty: "Medium",
+  //   },
+  // ];
   // .find((t) => t.id === templateId);
 
   return (
@@ -223,29 +222,29 @@ export default function NewSitePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="subdomain">Subdomain</Label>
+                <Label htmlFor="subdomain">Domain</Label>
                 <div className="flex">
                   <Input
                     id="subdomain"
                     name="subdomain"
-                    placeholder="lincoln-elementary"
+                    placeholder="example.com"
                     value={formData.subdomain}
                     onChange={handleInputChange}
                     className="rounded-r-none"
-                    required
-                    disabled
+                  
+               
                   />
-                  <div className="flex items-center px-3 bg-muted border border-l-0 rounded-r-md text-sm text-muted-foreground">
+                  {/* <div className="flex items-center px-3 bg-muted border border-l-0 rounded-r-md text-sm text-muted-foreground">
                     .edusite.com
-                  </div>
+                  </div> */}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   This will be your website's URL:{" "}
-                  {formData.subdomain || "your-subdomain"}.edusite.com
+                  {formData.subdomain || "your-domain.com"}
                 </p>
               </div>
 
-              {selectedTemplate && (
+              {/* {selectedTemplate && (
                 <div className="border rounded-lg overflow-hidden">
                   <div className="p-4 bg-muted">
                     <h3 className="font-medium">Template</h3>
@@ -271,7 +270,7 @@ export default function NewSitePage() {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
 
               <div className="flex justify-end space-x-4">
                 <Button type="button" variant="outline" asChild>

@@ -36,6 +36,8 @@ import type {
   Card,
   List,
   Order,
+  SchoolDashboard,
+  SchoolProduct,
 } from "@/lib/types";
 import {
   createSite,
@@ -119,6 +121,13 @@ import {
   generateBoardForUnit as generateBoardForUnitApi,
   getOrders as getOrdersApi,
   getOrderById as getOrderByIdApi,
+  getSchoolDashboard as getSchoolDashboardApi,
+
+  createSchoolProduct as createSchoolProductApi,
+  getAllSchoolProducts as getAllSchoolProductsApi,
+  deleteSchoolProduct as deleteSchoolProductApi,
+  updateSchoolProduct as updateSchoolProductApi,
+  getSchoolProductById as getSchoolProductByIdApi,
 } from "@/lib/api-service";
 
 interface OrganizationDataContextType {
@@ -381,6 +390,15 @@ interface OrganizationDataContextType {
   getOrderById: (id: string, token: string) => Promise<void>;
   ordersData: { orders: Order[]; total: number; page: number; limit: number };
   order: Order | null;
+  getSchoolDashboard: ( schoolId: string) => Promise<void>;
+  schoolDashboard: SchoolDashboard | null;
+  createSchoolProduct: (product: Partial<SchoolProduct>) => Promise<void>;
+  getAllSchoolProducts: ( payload: { schoolId: string, page: number, limit: number, search: string }) => Promise<void>;
+  deleteSchoolProduct: (id: string) => Promise<void>;
+  updateSchoolProduct: (id: string, product: Partial<SchoolProduct>) => Promise<void>;
+  getSchoolProductById: (id: string) => Promise<void>;
+  schoolProductsData: { products: SchoolProduct[]; total: number, page: number, limit: number };
+  schoolProduct: SchoolProduct | null;
 }
 
 const OrganizationDataContext = createContext<
@@ -435,7 +453,9 @@ export function OrganizationDataProvider({
   const [pageSections, setPageSections] = useState<Section[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-
+  const [schoolDashboard, setSchoolDashboard] = useState<SchoolDashboard | null>(null);
+  const [schoolProductsData, setSchoolProductsData] = useState<{ products: SchoolProduct[]; total: number, page: number, limit: number }>({ products: [], total: 0, page: 1, limit: 10 });
+  const [schoolProduct, setSchoolProduct] = useState<SchoolProduct | null>(null);
   // ClassRooms
   const [classesData, setClassesData] = useState<
     | ClassesData
@@ -512,8 +532,8 @@ export function OrganizationDataProvider({
   // Fetch sites data
   const fetchSitesData = async (query: any) => {
     try {
-      const sitesList = await getSites(query);
-      setSites(sitesList?.sites);
+      const response = await getSites(query);
+      setSites(response);
     } catch (error) {
       console.error("Error fetching sites:", error);
       setError(
@@ -556,6 +576,7 @@ export function OrganizationDataProvider({
       setLoading(true);
       const newSite = await createSite(site);
       setSites((prev) => [newSite, ...prev]);
+      return newSite;
     } catch (error) {
       console.error("Error creating site:", error);
       throw error;
@@ -1805,6 +1826,96 @@ export function OrganizationDataProvider({
       setLoading(false);
     }
   };
+  const getSchoolDashboard = async ( schoolId: string) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await getSchoolDashboardApi(token, schoolId);
+      setSchoolDashboard(response);
+    } catch (error) {
+      console.error("Failed to get school dashboard:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const createSchoolProduct = async (product: Partial<SchoolProduct>) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await createSchoolProductApi(product, token);
+      setSchoolProductsData((prevSchoolProductsData) => {
+        return { ...prevSchoolProductsData, products: [...prevSchoolProductsData.products, response] };
+      });
+    } catch (error) {
+      console.error("Failed to create school product:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const getAllSchoolProducts = async ( payload: { schoolId: string, page: number, limit: number, search: string }) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await getAllSchoolProductsApi(token, payload);
+      setSchoolProductsData(response);
+    } catch (error) {
+      console.error("Failed to get school products:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const deleteSchoolProduct = async (id: string) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      await deleteSchoolProductApi(id, token);
+      setSchoolProductsData((prevSchoolProductsData) => {
+        return { ...prevSchoolProductsData, products: prevSchoolProductsData.products.filter((product) => product._id !== id) };
+      });
+    } catch (error) {
+      console.error("Failed to delete school product:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const updateSchoolProduct = async (id: string, product: Partial<SchoolProduct>) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await updateSchoolProductApi(id, product, token);
+      setSchoolProductsData((prevSchoolProductsData) => {
+        return { ...prevSchoolProductsData, products: prevSchoolProductsData.products.map((product) => product._id === id ? response : product) };
+      });
+    } catch (error) {
+      console.error("Failed to update school product:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const getSchoolProductById = async (id: string) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await getSchoolProductByIdApi(id, token);
+      setSchoolProduct(response);
+    } catch (error) {
+      console.error("Failed to get school product by id:", error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <OrganizationDataContext.Provider
@@ -1942,6 +2053,15 @@ export function OrganizationDataProvider({
         getOrderById,
         ordersData,
         order,
+        getSchoolDashboard,
+        schoolDashboard,
+        createSchoolProduct,
+        getAllSchoolProducts,
+        deleteSchoolProduct,
+        updateSchoolProduct,
+        getSchoolProductById,
+        schoolProductsData,
+        schoolProduct,
       }}
     >
       {children}

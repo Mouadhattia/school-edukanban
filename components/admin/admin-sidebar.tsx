@@ -75,6 +75,12 @@ export function AdminSidebar({ className, onToggle }: AdminSidebarProps) {
           active: pathname === "/admin/courses",
         },
         {
+          title: "Products",
+          href: "/admin/products",
+          icon: Store,
+          active: pathname === "/admin/products",
+        },
+        {
           title: "Syllabus",
           href: "/admin/syllabus",
           icon: BookOpen,

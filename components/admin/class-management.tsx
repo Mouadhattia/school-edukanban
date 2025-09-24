@@ -39,6 +39,7 @@ import { AssignStudentsDialog } from "@/components/admin/assign-students-dialog"
 import { AssignTeachersDialog } from "@/components/admin/assign-teachers-dialog";
 import { useOrganizationData } from "@/contexts/organization-data-context";
 import { Classroom, FullClassRoomCreationData } from "@/lib/types";
+import Link from "next/link";
 
 export function ClassManagement() {
   // context
@@ -205,16 +206,16 @@ export function ClassManagement() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <a href={`/admin/classes/${cls._id}/boards`}>
+                        <Link href={`/admin/classes/${cls._id}/boards`}>
                           <BookOpen className="mr-2 h-4 w-4" />
                           View Boards
-                        </a>
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <a href={`/admin/classes/${cls._id}/courses`}>
+                        <Link href={`/admin/classes/${cls._id}/courses`}>
                           <BookOpen className="mr-2 h-4 w-4" />
                           View Courses
-                        </a>
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem

@@ -1,16 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, Download, Globe, Home, Layout, Settings, TrendingUp, Users } from "lucide-react"
+import { useOrganizationData } from "@/contexts/organization-data-context"
 
 export default function AnalyticsPage() {
+  const { schoolDashboard,user,getSchoolDashboard } = useOrganizationData();
   const [dateRange, setDateRange] = useState("30d")
   const [selectedSite, setSelectedSite] = useState("all")
+
+  useEffect(() => {
+    if (user && user.schoolIds) {
+      getSchoolDashboard(user.schoolIds[0]);
+    }
+  }, [user]);
+  console.log(schoolDashboard)
 
   return (
     <div className="flex min-h-screen">

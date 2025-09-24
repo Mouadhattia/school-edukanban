@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,8 +12,18 @@ import { ActionButton } from "@/components/ui/action-button"
 import { AdminAnalytics } from "@/components/admin/admin-analytics"
 import { NotificationsPanel } from "@/components/admin/notifications-panel"
 import { AuditLogTable } from "@/components/admin/audit-log-table"
+import { useOrganizationData } from "@/contexts/organization-data-context"
 
 export function AdminDashboard() {
+  const { schoolDashboard,user,getSchoolDashboard } = useOrganizationData();
+
+
+  useEffect(() => {
+    if (user && user.schoolIds) {
+      getSchoolDashboard(user.schoolIds[0]);
+    }
+  }, [user]);
+
   const router = useRouter()
   // Mock data for pending template requests
   const pendingTemplateRequests = 3
@@ -73,8 +83,8 @@ export function AdminDashboard() {
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">25</div>
-                  <p className="text-xs text-muted-foreground">+2 since last month</p>
+                  <div className="text-2xl font-bold">{schoolDashboard?.data?.users?.breakdown?.teachers || 0}</div>
+                  <p className="text-xs text-muted-foreground"> across {schoolDashboard?.data?.classrooms?.total || 0} classrooms</p>
                 </CardContent>
               </Card>
               <Card>
@@ -96,8 +106,8 @@ export function AdminDashboard() {
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">350</div>
-                  <p className="text-xs text-muted-foreground">+12 since last month</p>
+                  <div className="text-2xl font-bold">{schoolDashboard?.data?.users?.breakdown?.students || 0}</div>
+                  <p className="text-xs text-muted-foreground">across {schoolDashboard?.data?.classrooms?.total || 0} classrooms</p>
                 </CardContent>
               </Card>
               <Card>
@@ -118,13 +128,13 @@ export function AdminDashboard() {
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">42</div>
-                  <p className="text-xs text-muted-foreground">+8 since last month</p>
+                  <div className="text-2xl font-bold">{schoolDashboard?.data?.boards?.total || 0}</div>
+                  <p className="text-xs text-muted-foreground">across {schoolDashboard?.data?.classrooms?.total || 0} classrooms</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Template Usage</CardTitle>
+                  <CardTitle className="text-sm font-medium">Course Usage</CardTitle>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -139,8 +149,8 @@ export function AdminDashboard() {
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">18</div>
-                  <p className="text-xs text-muted-foreground">+2 since last month</p>
+                  <div className="text-2xl font-bold">{schoolDashboard?.data?.courses?.total || 0}</div>
+                  <p className="text-xs text-muted-foreground">across {schoolDashboard?.data?.classrooms?.total || 0} classrooms</p>
                 </CardContent>
               </Card>
             </div>
@@ -149,14 +159,14 @@ export function AdminDashboard() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <div>
                     <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Recent actions taken by teachers and students</CardDescription>
+                    <CardDescription>Recent actions taken by </CardDescription>
                   </div>
                   <ActionButton action="navigate" path="/admin/activity" variant="outline" size="sm">
                     View All
                   </ActionButton>
                 </CardHeader>
                 <CardContent>
-                  <RecentActivityFeed />
+                  <RecentActivityFeed recentActivity={schoolDashboard?.data?.recentActivity || { newUsersThisWeek: 0, newClassroomsThisWeek: 0, newBoardsThisWeek: 0 }} />
                 </CardContent>
               </Card>
               <Card className="col-span-3">
@@ -169,7 +179,7 @@ export function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-            <div className="grid gap-4 grid-cols-1">
+            {/* <div className="grid gap-4 grid-cols-1">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <div>
@@ -184,7 +194,7 @@ export function AdminDashboard() {
                   <SystemStatus />
                 </CardContent>
               </Card>
-            </div>
+            </div> */}
           </TabsContent>
           <TabsContent value="analytics" className="space-y-4">
             <Card>
@@ -193,7 +203,7 @@ export function AdminDashboard() {
                 <CardDescription>School performance metrics and trends</CardDescription>
               </CardHeader>
               <CardContent className="h-[500px]">
-                <AdminAnalytics />
+                <AdminAnalytics schoolId={ user?.schoolIds?.[0] || "" } />
               </CardContent>
             </Card>
           </TabsContent>
@@ -215,7 +225,7 @@ export function AdminDashboard() {
                 <CardDescription>System notifications and alerts</CardDescription>
               </CardHeader>
               <CardContent>
-                <NotificationsPanel />
+                <NotificationsPanel onClose={() => {}} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -226,7 +236,7 @@ export function AdminDashboard() {
                 <CardDescription>System activity and user actions</CardDescription>
               </CardHeader>
               <CardContent>
-                <AuditLogTable />
+                <AuditLogTable schoolId={ user?.schoolIds?.[0] || "" } />
               </CardContent>
             </Card>
           </TabsContent>

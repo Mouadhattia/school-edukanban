@@ -1,108 +1,74 @@
 "use client"
 
-import { FileText, Bell, Clock, GraduationCap, Settings, School } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Users, School, Target, TrendingUp } from "lucide-react"
 
-export function RecentActivityFeed() {
+interface RecentActivityData {
+  newUsersThisWeek: number;
+  newClassroomsThisWeek: number;
+  newBoardsThisWeek: number;
+}
+
+export function RecentActivityFeed({ recentActivity }: { recentActivity: RecentActivityData  }) {
+  // Transform the recentActivity data into display format
   const activities = [
     {
       id: 1,
-      user: {
-        name: "Sarah Johnson",
-        avatar: "/placeholder.svg?height=32&width=32",
-        initials: "SJ",
-        role: "Teacher",
-      },
-      action: "added a new assignment",
-      target: "Science Project",
-      time: "10 minutes ago",
-      icon: FileText,
+      metric: "New Users",
+      value: recentActivity?.newUsersThisWeek || 0,
+      icon: Users,
       iconColor: "text-blue-500 bg-blue-100 dark:bg-blue-900/30",
+      description: "users joined this week",
     },
     {
       id: 2,
-      user: {
-        name: "Admin",
-        avatar: "/placeholder.svg?height=32&width=32",
-        initials: "A",
-        role: "System",
-      },
-      action: "created a new class",
-      target: "Advanced Mathematics",
-      time: "45 minutes ago",
+      metric: "New Classrooms",
+      value: recentActivity?.newClassroomsThisWeek || 0,
       icon: School,
       iconColor: "text-green-500 bg-green-100 dark:bg-green-900/30",
+      description: "classrooms created this week",
     },
     {
       id: 3,
-      user: {
-        name: "Michael Chen",
-        avatar: "/placeholder.svg?height=32&width=32",
-        initials: "MC",
-        role: "Principal",
-      },
-      action: "sent an announcement",
-      target: "Staff Meeting",
-      time: "2 hours ago",
-      icon: Bell,
-      iconColor: "text-red-500 bg-red-100 dark:bg-red-900/30",
-    },
-    {
-      id: 4,
-      user: {
-        name: "Emily Rodriguez",
-        avatar: "/placeholder.svg?height=32&width=32",
-        initials: "ER",
-        role: "Counselor",
-      },
-      action: "updated student record",
-      target: "James Wilson",
-      time: "3 hours ago",
-      icon: GraduationCap,
+      metric: "New Boards",
+      value: recentActivity?.newBoardsThisWeek || 0,
+      icon: Target,
       iconColor: "text-purple-500 bg-purple-100 dark:bg-purple-900/30",
-    },
-    {
-      id: 5,
-      user: {
-        name: "David Kim",
-        avatar: "/placeholder.svg?height=32&width=32",
-        initials: "DK",
-        role: "IT Admin",
-      },
-      action: "changed system settings",
-      target: "Notification Preferences",
-      time: "Yesterday",
-      icon: Settings,
-      iconColor: "text-gray-500 bg-gray-100 dark:bg-gray-800",
+      description: "boards created this week",
     },
   ]
 
   return (
     <div className="space-y-4">
       {activities.map((activity) => (
-        <div key={activity.id} className="flex items-start gap-4">
-          <div className={`p-2 rounded-full ${activity.iconColor} mt-1`}>
-            <activity.icon className="h-3 w-3" />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
-                <AvatarFallback>{activity.user.initials}</AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium">{activity.user.name}</span>
-              <span className="text-xs text-muted-foreground">({activity.user.role})</span>
+        <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-full ${activity.iconColor}`}>
+              <activity.icon className="h-4 w-4" />
             </div>
-            <p className="text-sm">
-              {activity.action} <span className="font-medium">{activity.target}</span>
-            </p>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Clock className="mr-1 h-3 w-3" />
-              {activity.time}
+            <div>
+              <h4 className="text-sm font-medium">{activity.metric}</h4>
+              <p className="text-xs text-muted-foreground">{activity.description}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-green-600">
+              +{activity.value}
+            </div>
+            <div className="flex items-center text-xs text-green-600">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              This week
             </div>
           </div>
         </div>
       ))}
+      
+      {/* Show empty state if no activity */}
+      {(!recentActivity || (recentActivity.newUsersThisWeek === 0 && recentActivity.newClassroomsThisWeek === 0 && recentActivity.newBoardsThisWeek === 0)) && (
+        <div className="text-center py-8 text-muted-foreground">
+          <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No recent activity this week</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -27,15 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { AddStudentDialog } from "@/components/admin/add-student-dialog";
 import { EditTeacherDialog as EditStudentDialog } from "@/components/admin/edit-teacher-dialog";
 import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
@@ -79,6 +70,7 @@ export function StudentsList() {
           limit: itemsPerPage,
           search: searchQuery,
           role: "student",
+          schoolId: schoolId,
         },
         token
       );

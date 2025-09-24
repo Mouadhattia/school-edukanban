@@ -614,7 +614,7 @@ export interface Classroom {
   updatedAt: string;
   levelId: string | Level;
   studyPeriod: string | StudyPeriod;
-  courses?: Course[];
+  schoolProductId: string | SchoolProduct;
 }
 // GetClassesPayload
 export interface GetClassesPayload {
@@ -717,7 +717,6 @@ export interface Course {
   name: string;
   description?: string;
   school: string | School;
-  price: number;
   duration: number;
   image: string;
   video: string;
@@ -791,4 +790,121 @@ export interface Order {
   paymentGatewayStatus: "pending" | "paid" | "failed";
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface SchoolDashboard {
+  success: boolean;
+  data: {
+    school: {
+      id: string;
+      name: string;
+      district: string;
+      type: string;
+      status: string;
+    };
+    users: {
+      total: number;
+      active: number;
+      breakdown: {
+        teachers: number;
+        students: number;
+        admins: number;
+      };
+      registrationTrends: any[]; // refine later if you know structure
+    };
+    courses: {
+      total: number;
+      joinEnabled: number;
+      analytics: {
+        totalCourses: number;
+        averagePrice: number;
+        averageDuration: number;
+        totalRevenue: number;
+      };
+    };
+    classrooms: {
+      total: number;
+      active: number;
+      archived: number;
+      capacityStats: {
+        totalCapacity: number;
+        averageCapacity: number;
+        maxCapacity: number;
+        minCapacity: number;
+      };
+    };
+    enrollments: {
+      total: number;
+      active: number;
+      pending: number;
+      rejected: number;
+      monthlyTrends: {
+        _id: {
+          year: number;
+          month: number;
+        };
+        total: number;
+        active: number;
+        pending: number;
+      }[];
+    };
+    boards: {
+      total: number;
+      createdThisMonth: number;
+      stats: {
+        _id: string | null;
+        totalBoards: number;
+        totalMembers: number;
+        averageMembersPerBoard: number;
+      };
+    };
+    tasks: {
+      total: number;
+      createdThisMonth: number;
+      byStatus: {
+        _id: string[];
+        count: number;
+      }[];
+    };
+    sessions: {
+      total: number;
+      thisMonth: number;
+    };
+    attendance: {
+      stats: any[]; // refine later if you know structure
+      rate: {
+        attendanceRate: number;
+        totalSessions: number;
+        presentCount: number;
+        lateCount: number;
+      };
+    };
+    academic: {
+      levels: number;
+      studyPeriods: {
+        total: number;
+        active: number;
+      };
+    };
+    recentActivity: {
+      newUsersThisWeek: number;
+      newClassroomsThisWeek: number;
+      newBoardsThisWeek: number;
+    };
+    generatedAt: string; // ISO date string
+  };
+}
+export interface SchoolProduct {
+  _id: string; // MongoDB ObjectId
+  name: string;
+  description: string;
+  school: string | School; // ObjectId reference to School
+  price: number;
+  duration: number;
+  image?: string;
+  video?: string;
+  enableJoinClass: boolean;
+  courses: string[] | Course[]; // Array of ObjectIds referencing Course
+  createdAt: string; // ISO date
+  updatedAt: string; // ISO date
 }

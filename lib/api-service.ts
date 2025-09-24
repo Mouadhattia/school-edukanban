@@ -35,12 +35,14 @@ import type {
   List,
   Card,
   Order,
+  SchoolDashboard,
+  SchoolProduct,
 } from "@/lib/types";
 
 // Configuration flag to switch between mock and real API
 const USE_MOCK_DATA = false;
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api-edukanban.iread.tn/api";
+  process.env.NEXT_PUBLIC_API_URL || "https://edukanban.iread.tn/api";
 
 // Helper for API requests
 async function apiRequest<T>(
@@ -1594,5 +1596,65 @@ export async function getOrderById(id: string, token: string): Promise<Order> {
     headers: {
       Authorization: `${token}`,
     },
+  });
+}
+// school dashboard
+export async function getSchoolDashboard(token: string,schoolId: string): Promise<SchoolDashboard> {
+  return apiRequest<SchoolDashboard>(`/school/dashboard/${schoolId}`, {
+    headers: {
+      Authorization: `${token}`,
+    },
+  });
+}
+
+// school product
+export async function createSchoolProduct(
+  product: Partial<SchoolProduct>,
+  token: string
+): Promise<SchoolProduct> {
+  return apiRequest<SchoolProduct>("/school/products", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(product),
+  });
+}
+
+export async function getSchoolProductById(id: string, token: string): Promise<SchoolProduct> {
+  return apiRequest<SchoolProduct>(`/school/products/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+} 
+
+export async function updateSchoolProduct(id: string, product: Partial<SchoolProduct>, token: string): Promise<SchoolProduct> {
+  return apiRequest<SchoolProduct>(`/school/products/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(product),
+  });
+}
+
+export async function deleteSchoolProduct(id: string, token: string): Promise<void> {
+  return apiRequest<void>(`/school/products/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+export async function getAllSchoolProducts(token: string, payload: { schoolId: string, page: number, limit: number, search: string }): Promise<{ products: SchoolProduct[]; total: number, page: number, limit: number }> {
+  const queryString = payload ? `?schoolId=${payload.schoolId}&page=${payload.page}&limit=${payload.limit}&search=${payload.search}` : "";
+  return apiRequest<{ products: SchoolProduct[]; total: number, page: number, limit: number }>(`/school/products${queryString}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+   
   });
 }

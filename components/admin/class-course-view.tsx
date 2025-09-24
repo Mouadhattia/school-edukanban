@@ -179,7 +179,7 @@ export function ClassCourseView({ classId }: ClassCourseViewProps) {
               </CardContent>
               <CardFooter>
                 <Button variant="outline" className="w-full" asChild>
-                  <a href={`/admin/syllabus/${course.syllabus}`}>View Course</a>
+                  <a href={`/school/admin/syllabus/${course.syllabus}`}>View Course</a>
                 </Button>
               </CardFooter>
             </Card>
